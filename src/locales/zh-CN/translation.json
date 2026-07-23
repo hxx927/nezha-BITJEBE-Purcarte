@@ -36,7 +36,17 @@
     "system": "系统",
     "uptime": "运行时间",
     "totalUpload": "总上传",
-    "totalDownload": "总下载"
+    "totalDownload": "总下载",
+    "cores": "核",
+    "swap": "SWAP",
+    "network": "网络",
+    "traffic": "流量",
+    "load": "负载",
+    "expires": "到期",
+    "disabled": "未启用",
+    "details": "服务器详情",
+    "instanceDetails": "实例信息",
+    "detailsDescription": "实例信息与延迟历史"
   },
   "cycleTransfer": {
     "used": "已使用",

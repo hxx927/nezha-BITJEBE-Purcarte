@@ -36,7 +36,17 @@
     "system": "系統",
     "uptime": "運行時間",
     "totalUpload": "總上傳",
-    "totalDownload": "總下載"
+    "totalDownload": "總下載",
+    "cores": "核心",
+    "swap": "SWAP",
+    "network": "網路",
+    "traffic": "流量",
+    "load": "負載",
+    "expires": "到期",
+    "disabled": "未啟用",
+    "details": "伺服器詳情",
+    "instanceDetails": "實例資訊",
+    "detailsDescription": "實例資訊與延遲歷史"
   },
   "cycleTransfer": {
     "used": "已使用",

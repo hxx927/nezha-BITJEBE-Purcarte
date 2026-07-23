@@ -29,6 +29,7 @@ export interface NezhaServerHost {
   platform: string
   platform_version: string
   cpu: string[]
+  cpu_cores: number
   gpu: string[]
   mem_total: number
   disk_total: number

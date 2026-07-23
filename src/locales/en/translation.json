@@ -36,7 +36,17 @@
     "system": "System",
     "uptime": "Uptime",
     "totalUpload": "Upload",
-    "totalDownload": "Download"
+    "totalDownload": "Download",
+    "cores": "Cores",
+    "swap": "SWAP",
+    "network": "Network",
+    "traffic": "Traffic",
+    "load": "Load",
+    "expires": "Expires",
+    "disabled": "Off",
+    "details": "Server details",
+    "instanceDetails": "Instance details",
+    "detailsDescription": "Instance information and latency history"
   },
   "cycleTransfer": {
     "used": "used",

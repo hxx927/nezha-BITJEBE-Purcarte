@@ -1,205 +1,266 @@
+import ServerCardDetailsDialog from "@/components/ServerCardDetailsDialog"
 import ServerFlag from "@/components/ServerFlag"
-import ServerUsageBar from "@/components/ServerUsageBar"
 import TrafficBar from "@/components/TrafficBar"
+import { Progress } from "@/components/ui/progress"
 import { formatBytes } from "@/lib/format"
-import { GetFontLogoClass, GetOsName, MageMicrosoftWindows } from "@/lib/logo-class"
-import { cn, calcTrafficUsed, formatNezhaInfo, parsePublicNote } from "@/lib/utils"
+import { GetFontLogoClass, MageMicrosoftWindows } from "@/lib/logo-class"
+import { calcTrafficUsed, cn, formatBillingAmount, formatNezhaInfo, getDaysBetweenDatesWithAutoRenewal, parsePublicNote } from "@/lib/utils"
 import { NezhaServer } from "@/types/nezha-api"
+import { Cpu, HardDrive, Info, MemoryStick, Server } from "lucide-react"
+import { type KeyboardEvent, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 
 import PlanInfo from "./PlanInfo"
-import BillingInfo from "./billingInfo"
-import { Badge } from "./ui/badge"
 import { Card } from "./ui/card"
+
+type ResourceRowProps = {
+  label: string
+  value: number
+  valueLabel?: string
+  disabled?: boolean
+}
+
+function ResourceRow({ label, value, valueLabel, disabled }: ResourceRowProps) {
+  const normalizedValue = Number.isFinite(value) ? Math.max(0, Math.min(100, value)) : 0
+  const indicatorClassName = disabled
+    ? "bg-muted-foreground/30"
+    : normalizedValue > 90
+      ? "bg-red-500"
+      : normalizedValue > 70
+        ? "bg-orange-400"
+        : "bg-green-500"
+
+  return (
+    <div className="grid min-h-7 grid-cols-[4rem_minmax(0,1fr)_3.25rem] items-center gap-2 text-sm">
+      <span className="font-medium">{label}</span>
+      <Progress
+        value={normalizedValue}
+        className="h-2.5 bg-secondary/80"
+        indicatorClassName={indicatorClassName}
+        aria-label={`${label} ${valueLabel || `${normalizedValue.toFixed(0)}%`}`}
+      />
+      <span className="text-right tabular-nums text-muted-foreground">{valueLabel || `${normalizedValue.toFixed(0)}%`}</span>
+    </div>
+  )
+}
+
+function formatUptime(uptime: number, daysLabel: string, hoursLabel: string) {
+  const days = Math.floor(uptime / 86400)
+  const hours = Math.floor((uptime % 86400) / 3600)
+  return days > 0 ? `${days}${daysLabel}${hours}${hoursLabel}` : `${hours}${hoursLabel}`
+}
+
+function formatExpiryDate(value?: string) {
+  if (!value || value.startsWith("0000-00-00")) return null
+  const date = new Date(value)
+  if (!Number.isFinite(date.getTime())) return null
+  return date.toLocaleDateString()
+}
 
 export default function ServerCard({ now, serverInfo }: { now: number; serverInfo: NezhaServer }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { name, country_code, online, cpu, up, down, mem, stg, net_in_transfer, net_out_transfer, public_note, platform, traffic_limit, traffic_limit_type, traffic_reset_day } = formatNezhaInfo(
-    now,
-    serverInfo,
-  )
+  const [detailsOpen, setDetailsOpen] = useState(false)
+  const {
+    name,
+    country_code,
+    online,
+    cpu,
+    up,
+    down,
+    mem,
+    swap,
+    stg,
+    uptime,
+    mem_total,
+    swap_total,
+    disk_total,
+    load_1,
+    load_5,
+    load_15,
+    net_in_transfer,
+    net_out_transfer,
+    last_active_time_string,
+    public_note,
+    platform,
+    traffic_limit,
+    traffic_limit_type,
+    traffic_reset_day,
+    expired_at,
+    cpu_cores,
+  } = formatNezhaInfo(now, serverInfo)
 
-  const cardClick = () => {
+  const customBackgroundImage = (window.CustomBackgroundImage as string) !== "" ? window.CustomBackgroundImage : undefined
+  const parsedData = parsePublicNote(public_note)
+  const billingData = parsedData?.billingDataMod
+  const showTrafficBar = (window as unknown as Record<string, unknown>).ShowTrafficBar !== false
+  const trafficUsed = calcTrafficUsed(net_out_transfer, net_in_transfer, traffic_limit_type)
+
+  let billingPrice: string | null = null
+  let remainingDays: number | null = null
+  if (billingData) {
+    if (billingData.amount === "-1") {
+      billingPrice = t("billingInfo.free")
+    } else if (billingData.amount && billingData.amount !== "0") {
+      billingPrice = `${formatBillingAmount(billingData.amount, billingData.currency)}/${billingData.cycle}`
+    }
+
+    if (billingData.endDate && !billingData.endDate.startsWith("0000-00-00")) {
+      try {
+        remainingDays = getDaysBetweenDatesWithAutoRenewal(billingData).days
+      } catch {
+        remainingDays = null
+      }
+    }
+  }
+
+  const expiryDate = formatExpiryDate(billingData?.endDate || expired_at)
+
+  const openServerDetail = () => {
     sessionStorage.setItem("fromMainPage", "true")
     navigate(`/server/${serverInfo.id}`)
   }
 
-  const showFlag = true
+  const handleCardKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault()
+      openServerDetail()
+    }
+  }
 
-  const customBackgroundImage = (window.CustomBackgroundImage as string) !== "" ? window.CustomBackgroundImage : undefined
-
-  // @ts-expect-error ShowNetTransfer is a global variable
-  const showNetTransfer = window.ShowNetTransfer as boolean
-
-  // @ts-expect-error FixedTopServerName is a global variable
-  const fixedTopServerName = window.FixedTopServerName as boolean
-
-  const parsedData = parsePublicNote(public_note)
-
-  return online ? (
-    <Card
-      className={cn(
-        "flex flex-col items-center justify-start gap-3 p-3 md:px-5 cursor-pointer hover:bg-accent/50 transition-colors",
-        {
-          "flex-col": fixedTopServerName,
-          "lg:flex-row": !fixedTopServerName,
-        },
-        {
-          "bg-card/70": customBackgroundImage,
-        },
-      )}
-      onClick={cardClick}
-    >
-      <section
-        className={cn("grid items-center gap-2", {
-          "lg:w-40": !fixedTopServerName,
-        })}
-        style={{ gridTemplateColumns: "auto auto 1fr" }}
+  return (
+    <>
+      <Card
+        role="link"
+        tabIndex={0}
+        className={cn(
+          "group flex min-h-[32rem] w-full cursor-pointer flex-col gap-3 overflow-hidden p-4 transition-colors hover:border-foreground/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:p-5",
+          customBackgroundImage && "bg-card/70 backdrop-blur-md",
+          !online && "border-red-500/50 bg-red-500/5",
+        )}
+        onClick={openServerDetail}
+        onKeyDown={handleCardKeyDown}
       >
-        <span className="h-2 w-2 shrink-0 rounded-full bg-green-500 self-center"></span>
-        <div className={cn("flex items-center justify-center", showFlag ? "min-w-[17px]" : "min-w-0")}>
-          {showFlag ? <ServerFlag country_code={country_code} /> : null}
-        </div>
-        <div className="relative flex flex-col">
-          <p className={cn("break-normal font-bold tracking-tight", showFlag ? "text-xs " : "text-sm")}>{name}</p>
-          <div
-            className={cn("hidden lg:block", {
-              "lg:hidden": fixedTopServerName,
-            })}
-          >
-            {parsedData?.billingDataMod && <BillingInfo parsedData={parsedData} />}
+        <div className="flex min-w-0 items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className={cn("size-2 shrink-0 rounded-full", online ? "bg-green-500" : "bg-red-500")} aria-hidden="true" />
+            <ServerFlag country_code={country_code} className="shrink-0 text-xl" />
+            <span className="flex size-6 shrink-0 items-center justify-center text-lg text-muted-foreground" aria-hidden="true">
+              {platform.includes("Windows") ? (
+                <MageMicrosoftWindows className="size-5" />
+              ) : platform ? (
+                <span className={`fl-${GetFontLogoClass(platform)}`} />
+              ) : (
+                <Server className="size-5" />
+              )}
+            </span>
+            <h2 className="truncate text-lg font-bold leading-tight">{name}</h2>
           </div>
+          <button
+            type="button"
+            className="flex size-8 shrink-0 items-center justify-center rounded-full text-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            aria-label={t("serverCard.details")}
+            title={t("serverCard.details")}
+            onClick={(event) => {
+              event.stopPropagation()
+              setDetailsOpen(true)
+            }}
+            onKeyDown={(event) => event.stopPropagation()}
+          >
+            <Info className="size-5" />
+          </button>
         </div>
-      </section>
-      <div
-        className={cn("flex items-center gap-2 -mt-2 lg:hidden", {
-          "lg:flex": fixedTopServerName,
-        })}
-      >
-        {parsedData?.billingDataMod && <BillingInfo parsedData={parsedData} />}
-      </div>
-      <div className="flex flex-col lg:items-start items-center gap-2">
-        <section
-          className={cn("grid grid-cols-5 items-center gap-3", {
-            "lg:grid-cols-6 lg:gap-4": fixedTopServerName,
-          })}
-        >
-          {fixedTopServerName && (
-            <div className={"hidden col-span-1 items-center lg:flex lg:flex-row gap-2"}>
-              <div className="text-xs font-semibold">
-                {platform.includes("Windows") ? (
-                  <MageMicrosoftWindows className="size-[10px]" />
-                ) : (
-                  <p className={`fl-${GetFontLogoClass(platform)}`} />
+
+        {(billingPrice || remainingDays !== null) && (
+          <div className="flex flex-wrap gap-2">
+            {billingPrice && (
+              <span className="rounded-md border border-red-200/70 bg-red-50/80 px-2 py-1 text-xs font-semibold text-red-600 dark:border-red-900/60 dark:bg-red-950/50 dark:text-red-300">
+                {billingPrice}
+              </span>
+            )}
+            {remainingDays !== null && (
+              <span
+                className={cn(
+                  "rounded-md border px-2 py-1 text-xs font-semibold",
+                  remainingDays >= 0
+                    ? "border-green-200/70 bg-green-50/80 text-green-700 dark:border-green-900/60 dark:bg-green-950/50 dark:text-green-300"
+                    : "border-red-200/70 bg-red-50/80 text-red-600 dark:border-red-900/60 dark:bg-red-950/50 dark:text-red-300",
                 )}
-              </div>
-              <div className={"flex w-14 flex-col"}>
-                <p className="text-xs text-muted-foreground">{t("serverCard.system")}</p>
-                <div className="flex items-center text-[10.5px] font-semibold">{platform.includes("Windows") ? "Windows" : GetOsName(platform)}</div>
-              </div>
-            </div>
-          )}
-          <div className={"flex w-14 flex-col"}>
-            <p className="text-xs text-muted-foreground">{"CPU"}</p>
-            <div className="flex items-center text-xs font-semibold">{cpu.toFixed(2)}%</div>
-            <ServerUsageBar value={cpu} />
+              >
+                {remainingDays >= 0
+                  ? `${t("billingInfo.remaining")} ${remainingDays} ${t("billingInfo.days")}`
+                  : `${t("billingInfo.expired")} ${Math.abs(remainingDays)} ${t("billingInfo.days")}`}
+              </span>
+            )}
           </div>
-          <div className={"flex w-14 flex-col"}>
-            <p className="text-xs text-muted-foreground">{t("serverCard.mem")}</p>
-            <div className="flex items-center text-xs font-semibold">{mem.toFixed(2)}%</div>
-            <ServerUsageBar value={mem} />
-          </div>
-          <div className={"flex w-14 flex-col"}>
-            <p className="text-xs text-muted-foreground">{t("serverCard.stg")}</p>
-            <div className="flex items-center text-xs font-semibold">{stg.toFixed(2)}%</div>
-            <ServerUsageBar value={stg} />
-          </div>
-          <div className={"flex w-14 flex-col"}>
-            <p className="text-xs text-muted-foreground">{t("serverCard.upload")}</p>
-            <div className="flex items-center text-xs font-semibold">
-              {up >= 1024 ? `${(up / 1024).toFixed(2)}G/s` : up >= 1 ? `${up.toFixed(2)}M/s` : `${(up * 1024).toFixed(2)}K/s`}
-            </div>
-          </div>
-          <div className={"flex w-14 flex-col"}>
-            <p className="text-xs text-muted-foreground">{t("serverCard.download")}</p>
-            <div className="flex items-center text-xs font-semibold">
-              {down >= 1024 ? `${(down / 1024).toFixed(2)}G/s` : down >= 1 ? `${down.toFixed(2)}M/s` : `${(down * 1024).toFixed(2)}K/s`}
-            </div>
-          </div>
-        </section>
-        {traffic_limit > 0 && (window as unknown as Record<string, unknown>).ShowTrafficBar !== false && (
-          <TrafficBar
-            used={calcTrafficUsed(net_out_transfer, net_in_transfer, traffic_limit_type)}
-            limit={traffic_limit}
-            resetDay={traffic_reset_day}
-            limitType={traffic_limit_type}
-          />
         )}
-        {showNetTransfer && (
-          <section className={"flex items-center w-full justify-between gap-1"}>
-            <Badge
-              variant="secondary"
-              className="items-center flex-1 justify-center rounded-[8px] text-nowrap text-[11px] border-muted-50 shadow-md shadow-neutral-200/30 dark:shadow-none"
-            >
-              {t("serverCard.upload")}:{formatBytes(net_out_transfer)}
-            </Badge>
-            <Badge
-              variant="outline"
-              className="items-center flex-1 justify-center rounded-[8px] text-nowrap text-[11px] shadow-md shadow-neutral-200/30 dark:shadow-none"
-            >
-              {t("serverCard.download")}:{formatBytes(net_in_transfer)}
-            </Badge>
-          </section>
-        )}
+
         {parsedData?.planDataMod && <PlanInfo parsedData={parsedData} />}
-      </div>
-    </Card>
-  ) : (
-    <Card
-      className={cn(
-        "flex flex-col items-center justify-start gap-3 sm:gap-0 p-3 md:px-5 cursor-pointer hover:bg-accent/50 transition-colors",
-        showNetTransfer ? "lg:min-h-[91px] min-h-[123px]" : "lg:min-h-[61px] min-h-[93px]",
-        {
-          "flex-col": fixedTopServerName,
-          "lg:flex-row": !fixedTopServerName,
-        },
-        {
-          "bg-card/70": customBackgroundImage,
-        },
-      )}
-      onClick={cardClick}
-    >
-      <section
-        className={cn("grid items-center gap-2", {
-          "lg:w-40": !fixedTopServerName,
-        })}
-        style={{ gridTemplateColumns: "auto auto 1fr" }}
-      >
-        <span className="h-2 w-2 shrink-0 rounded-full bg-red-500 self-center"></span>
-        <div className={cn("flex items-center justify-center", showFlag ? "min-w-[17px]" : "min-w-0")}>
-          {showFlag ? <ServerFlag country_code={country_code} /> : null}
-        </div>
-        <div className="relative flex flex-col">
-          <p className={cn("break-normal font-bold tracking-tight max-w-[108px]", showFlag ? "text-xs" : "text-sm")}>{name}</p>
-          <div
-            className={cn("hidden lg:block", {
-              "lg:hidden": fixedTopServerName,
-            })}
-          >
-            {parsedData?.billingDataMod && <BillingInfo parsedData={parsedData} />}
+
+        <div className="grid grid-cols-3 gap-2 border-y py-3 text-center text-sm">
+          <div className="flex min-w-0 items-center justify-center gap-1.5">
+            <Cpu className="size-4 shrink-0 text-blue-600" />
+            <span className="truncate">{cpu_cores > 0 ? `${cpu_cores} ${t("serverCard.cores")}` : t("serverDetail.unknown")}</span>
+          </div>
+          <div className="flex min-w-0 items-center justify-center gap-1.5">
+            <MemoryStick className="size-4 shrink-0 text-green-600" />
+            <span className="truncate">{formatBytes(mem_total)}</span>
+          </div>
+          <div className="flex min-w-0 items-center justify-center gap-1.5">
+            <HardDrive className="size-4 shrink-0 text-red-600" />
+            <span className="truncate">{formatBytes(disk_total)}</span>
           </div>
         </div>
-      </section>
-      <div
-        className={cn("flex items-center gap-2 lg:hidden", {
-          "lg:flex": fixedTopServerName,
-        })}
-      >
-        {parsedData?.billingDataMod && <BillingInfo parsedData={parsedData} />}
-      </div>
-      {parsedData?.planDataMod && <PlanInfo parsedData={parsedData} />}
-    </Card>
+
+        <div className="space-y-2">
+          <ResourceRow label="CPU" value={online ? cpu : 0} />
+          <ResourceRow label={t("serverCard.mem")} value={online ? mem : 0} />
+          <ResourceRow
+            label={t("serverCard.swap")}
+            value={online ? swap : 0}
+            valueLabel={swap_total > 0 ? undefined : t("serverCard.disabled")}
+            disabled={swap_total <= 0}
+          />
+          <ResourceRow label={t("serverCard.stg")} value={online ? stg : 0} />
+        </div>
+
+        <div className="mt-auto space-y-2 border-t pt-3 text-sm">
+          <div className="flex items-center justify-between gap-3">
+            <span className="font-medium">{t("serverCard.network")}</span>
+            <span className="truncate text-right tabular-nums text-muted-foreground">
+              {t("serverCard.upload")} {formatBytes(up * 1024 * 1024)}/s&nbsp;&nbsp;{t("serverCard.download")} {formatBytes(down * 1024 * 1024)}/s
+            </span>
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <span className="font-medium">{t("serverCard.traffic")}</span>
+            <span className="truncate text-right tabular-nums text-muted-foreground">
+              {t("serverCard.upload")} {formatBytes(net_out_transfer)}&nbsp;&nbsp;{t("serverCard.download")} {formatBytes(net_in_transfer)}
+            </span>
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <span className="font-medium">{t("serverCard.load")}</span>
+            <span className="tabular-nums text-muted-foreground">
+              {load_1} | {load_5} | {load_15}
+            </span>
+          </div>
+          {traffic_limit > 0 && showTrafficBar && (
+            <TrafficBar used={trafficUsed} limit={traffic_limit} resetDay={traffic_reset_day} limitType={traffic_limit_type} />
+          )}
+          <div className="grid grid-cols-2 gap-3 border-t pt-3 text-xs">
+            <div className="min-w-0 truncate">
+              <span className="mr-1 text-muted-foreground">{t("serverCard.expires")}:</span>
+              <span>{expiryDate || t("serverDetail.unknown")}</span>
+            </div>
+            <div className="min-w-0 truncate text-right">
+              <span className="mr-1 text-muted-foreground">{online ? t("online") : t("offline")}:</span>
+              <span>{online ? formatUptime(uptime, t("serverCard.days"), t("serverCard.hours")) : last_active_time_string || t("serverDetail.unknown")}</span>
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      <ServerCardDetailsDialog open={detailsOpen} onOpenChange={setDetailsOpen} now={now} serverInfo={serverInfo} />
+    </>
   )
 }
