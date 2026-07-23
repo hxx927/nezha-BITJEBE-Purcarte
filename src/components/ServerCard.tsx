@@ -32,7 +32,7 @@ function ResourceRow({ label, value, valueLabel, disabled }: ResourceRowProps) {
         : "bg-green-500"
 
   return (
-    <div className="grid min-h-5 grid-cols-[4rem_minmax(0,1fr)_3.25rem] items-center gap-2 text-sm">
+    <div className="grid min-h-5 grid-cols-[3rem_minmax(0,1fr)_2.75rem] items-center gap-1.5 text-sm">
       <span className="font-medium">{label}</span>
       <Progress
         value={normalizedValue}
@@ -151,14 +151,14 @@ export default function ServerCard({ now, serverInfo }: { now: number; serverInf
         role="link"
         tabIndex={0}
         className={cn(
-          "group flex h-full w-full cursor-pointer flex-col gap-1.5 overflow-hidden px-3.5 py-3 transition-colors hover:border-foreground/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+          "group flex h-full w-full cursor-pointer flex-col gap-1.5 overflow-hidden px-2.5 py-3 transition-colors hover:border-foreground/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
           !online && "border-red-500/50 bg-red-500/5",
         )}
         onClick={openServerDetail}
         onKeyDown={handleCardKeyDown}
       >
-        <div className="flex min-w-0 items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-2">
+        <div className="flex min-w-0 items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-1.5">
             <span className={cn("size-2 shrink-0 rounded-full", online ? "bg-green-500" : "bg-red-500")} aria-hidden="true" />
             <ServerFlag country_code={country_code} className="shrink-0 text-xl" />
             <span
@@ -217,17 +217,17 @@ export default function ServerCard({ now, serverInfo }: { now: number; serverInf
 
         {parsedData?.planDataMod && <PlanInfo parsedData={parsedData} />}
 
-        <div className="grid grid-cols-3 gap-2 border-y py-1.5 text-center text-sm">
-          <div className="flex min-w-0 items-center justify-center gap-1.5">
-            <Cpu className="size-4 shrink-0 text-blue-600" />
+        <div className="grid grid-cols-3 gap-1 border-y py-1.5 text-center text-xs">
+          <div className="flex min-w-0 items-center justify-center gap-1">
+            <Cpu className="size-3.5 shrink-0 text-blue-600" />
             <span className="truncate">{cpu_cores > 0 ? `${cpu_cores} ${t("serverCard.cores")}` : t("serverDetail.unknown")}</span>
           </div>
-          <div className="flex min-w-0 items-center justify-center gap-1.5">
-            <MemoryStick className="size-4 shrink-0 text-green-600" />
+          <div className="flex min-w-0 items-center justify-center gap-1">
+            <MemoryStick className="size-3.5 shrink-0 text-green-600" />
             <span className="truncate">{formatBytes(mem_total)}</span>
           </div>
-          <div className="flex min-w-0 items-center justify-center gap-1.5">
-            <HardDrive className="size-4 shrink-0 text-red-600" />
+          <div className="flex min-w-0 items-center justify-center gap-1">
+            <HardDrive className="size-3.5 shrink-0 text-red-600" />
             <span className="truncate">{formatBytes(disk_total)}</span>
           </div>
         </div>
@@ -245,15 +245,15 @@ export default function ServerCard({ now, serverInfo }: { now: number; serverInf
         </div>
 
         <div className="mt-auto space-y-1 border-t pt-2 text-sm">
-          <div className="flex items-center justify-between gap-2">
-            <span className="shrink-0 whitespace-nowrap font-medium">{t("serverCard.network")}</span>
-            <span className="truncate text-right tabular-nums text-foreground">
+          <div className="grid grid-cols-[3rem_minmax(0,1fr)] items-center gap-1.5">
+            <span className="whitespace-nowrap font-medium">{t("serverCard.network")}</span>
+            <span className="truncate text-right text-xs tabular-nums text-foreground">
               ↑ {formatBytes(up * 1024 * 1024)}/s&nbsp;&nbsp;↓ {formatBytes(down * 1024 * 1024)}/s
             </span>
           </div>
-          <div className="grid min-h-9 grid-cols-[4rem_minmax(0,1fr)] items-center gap-2">
-            <span className="shrink-0 whitespace-nowrap font-medium">{t("serverCard.traffic")}</span>
-            <div className="flex min-w-0 items-center gap-2">
+          <div className="grid min-h-9 grid-cols-[3rem_minmax(0,1fr)] items-center gap-1.5">
+            <span className="whitespace-nowrap font-medium">{t("serverCard.traffic")}</span>
+            <div className="flex min-w-0 items-center gap-1.5">
               {traffic_limit > 0 && showTrafficBar && (
                 <TrafficCircle value={trafficPercentage} showPercentage={showTrafficPercent} />
               )}
@@ -270,13 +270,13 @@ export default function ServerCard({ now, serverInfo }: { now: number; serverInf
               </div>
             </div>
           </div>
-          <div className="flex items-center justify-between gap-2">
-            <span className="shrink-0 whitespace-nowrap font-medium">{t("serverCard.load")}</span>
-            <span className="tabular-nums text-foreground">
+          <div className="grid grid-cols-[3rem_minmax(0,1fr)] items-center gap-1.5">
+            <span className="whitespace-nowrap font-medium">{t("serverCard.load")}</span>
+            <span className="truncate text-right tabular-nums text-foreground">
               {load_1} | {load_5} | {load_15}
             </span>
           </div>
-          <div className="grid grid-cols-2 gap-2 border-t pt-1.5 text-xs">
+          <div className="grid grid-cols-2 gap-1.5 border-t pt-1.5 text-[11px]">
             <div className="min-w-0 truncate">
               <span className="mr-1">{t("serverCard.expires")}:</span>
               <span>{expiryDate || t("serverDetail.unknown")}</span>
