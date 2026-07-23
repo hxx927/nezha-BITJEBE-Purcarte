@@ -79,6 +79,29 @@ export function GetFontLogoClass(platform: string): string {
   return "tux"
 }
 
+export function GetPlatformLogoColor(platform: string): string | undefined {
+  const normalized = (platform || "").toLowerCase()
+  if (normalized.includes("windows") || normalized.startsWith("win")) return "#0078d4"
+
+  const colors: Record<string, string> = {
+    alpine: "#0d597f",
+    archlinux: "#1793d1",
+    centos: "#932279",
+    debian: "#a81d33",
+    fedora: "#294172",
+    freebsd: "#ab2b28",
+    linuxmint: "#69b53f",
+    manjaro: "#35bf5c",
+    opensuse: "#73ba25",
+    "raspberry-pi": "#c51a4a",
+    redhat: "#ee0000",
+    "rocky-linux": "#10b981",
+    ubuntu: "#e95420",
+  }
+
+  return colors[GetFontLogoClass(platform)]
+}
+
 export function GetOsName(platform: string): string {
   const p = (platform || "").toLowerCase().trim()
   const proper = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)

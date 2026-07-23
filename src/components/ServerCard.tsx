@@ -1,9 +1,9 @@
 import ServerCardDetailsDialog from "@/components/ServerCardDetailsDialog"
 import ServerFlag from "@/components/ServerFlag"
-import TrafficBar from "@/components/TrafficBar"
+import TrafficCircle from "@/components/TrafficCircle"
 import { Progress } from "@/components/ui/progress"
 import { formatBytes } from "@/lib/format"
-import { GetFontLogoClass, MageMicrosoftWindows } from "@/lib/logo-class"
+import { GetFontLogoClass, GetPlatformLogoColor, MageMicrosoftWindows } from "@/lib/logo-class"
 import { calcTrafficUsed, cn, formatBillingAmount, formatNezhaInfo, getDaysBetweenDatesWithAutoRenewal, parsePublicNote } from "@/lib/utils"
 import { NezhaServer } from "@/types/nezha-api"
 import { Cpu, HardDrive, Info, MemoryStick, Server } from "lucide-react"
@@ -32,7 +32,7 @@ function ResourceRow({ label, value, valueLabel, disabled }: ResourceRowProps) {
         : "bg-green-500"
 
   return (
-    <div className="grid min-h-7 grid-cols-[4rem_minmax(0,1fr)_3.25rem] items-center gap-2 text-sm">
+    <div className="grid min-h-6 grid-cols-[4rem_minmax(0,1fr)_3.25rem] items-center gap-2 text-sm">
       <span className="font-medium">{label}</span>
       <Progress
         value={normalizedValue}
@@ -40,7 +40,7 @@ function ResourceRow({ label, value, valueLabel, disabled }: ResourceRowProps) {
         indicatorClassName={indicatorClassName}
         aria-label={`${label} ${valueLabel || `${normalizedValue.toFixed(0)}%`}`}
       />
-      <span className="text-right tabular-nums text-muted-foreground">{valueLabel || `${normalizedValue.toFixed(0)}%`}</span>
+      <span className="text-right tabular-nums text-foreground">{valueLabel || `${normalizedValue.toFixed(0)}%`}</span>
     </div>
   )
 }
@@ -56,6 +56,21 @@ function formatExpiryDate(value?: string) {
   const date = new Date(value)
   if (!Number.isFinite(date.getTime())) return null
   return date.toLocaleDateString()
+}
+
+function formatTrafficLimitType(type: string) {
+  switch (type) {
+    case "max":
+      return "较大值"
+    case "min":
+      return "较小值"
+    case "up":
+      return "单向上行"
+    case "down":
+      return "单向下行"
+    default:
+      return "双向"
+  }
 }
 
 export default function ServerCard({ now, serverInfo }: { now: number; serverInfo: NezhaServer }) {
@@ -86,7 +101,6 @@ export default function ServerCard({ now, serverInfo }: { now: number; serverInf
     platform,
     traffic_limit,
     traffic_limit_type,
-    traffic_reset_day,
     expired_at,
     cpu_cores,
   } = formatNezhaInfo(now, serverInfo)
@@ -94,7 +108,10 @@ export default function ServerCard({ now, serverInfo }: { now: number; serverInf
   const parsedData = parsePublicNote(public_note)
   const billingData = parsedData?.billingDataMod
   const showTrafficBar = (window as unknown as Record<string, unknown>).ShowTrafficBar !== false
+  const showTrafficPercent = (window as unknown as Record<string, unknown>).TrafficBarShowPercent !== false
+  const showTrafficBillingMode = (window as unknown as Record<string, unknown>).TrafficBarShowBillingMode !== false
   const trafficUsed = calcTrafficUsed(net_out_transfer, net_in_transfer, traffic_limit_type)
+  const trafficPercentage = traffic_limit > 0 ? Math.min(100, (trafficUsed / traffic_limit) * 100) : 0
 
   let billingPrice: string | null = null
   let remainingDays: number | null = null
@@ -134,7 +151,7 @@ export default function ServerCard({ now, serverInfo }: { now: number; serverInf
         role="link"
         tabIndex={0}
         className={cn(
-          "group flex min-h-[32rem] w-full cursor-pointer flex-col gap-3 overflow-hidden p-4 transition-colors hover:border-foreground/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:p-5",
+          "group flex h-full w-full cursor-pointer flex-col gap-2.5 overflow-hidden p-4 transition-colors hover:border-foreground/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
           !online && "border-red-500/50 bg-red-500/5",
         )}
         onClick={openServerDetail}
@@ -144,7 +161,11 @@ export default function ServerCard({ now, serverInfo }: { now: number; serverInf
           <div className="flex min-w-0 items-center gap-2.5">
             <span className={cn("size-2 shrink-0 rounded-full", online ? "bg-green-500" : "bg-red-500")} aria-hidden="true" />
             <ServerFlag country_code={country_code} className="shrink-0 text-xl" />
-            <span className="flex size-6 shrink-0 items-center justify-center text-lg text-muted-foreground" aria-hidden="true">
+            <span
+              className="flex size-6 shrink-0 items-center justify-center text-lg text-foreground"
+              style={{ color: GetPlatformLogoColor(platform) }}
+              aria-hidden="true"
+            >
               {platform.includes("Windows") ? (
                 <MageMicrosoftWindows className="size-5" />
               ) : platform ? (
@@ -196,7 +217,7 @@ export default function ServerCard({ now, serverInfo }: { now: number; serverInf
 
         {parsedData?.planDataMod && <PlanInfo parsedData={parsedData} />}
 
-        <div className="grid grid-cols-3 gap-2 border-y py-3 text-center text-sm">
+        <div className="grid grid-cols-3 gap-2 border-y py-2.5 text-center text-sm">
           <div className="flex min-w-0 items-center justify-center gap-1.5">
             <Cpu className="size-4 shrink-0 text-blue-600" />
             <span className="truncate">{cpu_cores > 0 ? `${cpu_cores} ${t("serverCard.cores")}` : t("serverDetail.unknown")}</span>
@@ -211,7 +232,7 @@ export default function ServerCard({ now, serverInfo }: { now: number; serverInf
           </div>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1">
           <ResourceRow label="CPU" value={online ? cpu : 0} />
           <ResourceRow label={t("serverCard.mem")} value={online ? mem : 0} />
           <ResourceRow
@@ -223,35 +244,45 @@ export default function ServerCard({ now, serverInfo }: { now: number; serverInf
           <ResourceRow label={t("serverCard.stg")} value={online ? stg : 0} />
         </div>
 
-        <div className="mt-auto space-y-2 border-t pt-3 text-sm">
+        <div className="mt-auto space-y-1.5 border-t pt-2.5 text-sm">
           <div className="flex items-center justify-between gap-3">
             <span className="font-medium">{t("serverCard.network")}</span>
-            <span className="truncate text-right tabular-nums text-muted-foreground">
+            <span className="truncate text-right tabular-nums text-foreground">
               {t("serverCard.upload")} {formatBytes(up * 1024 * 1024)}/s&nbsp;&nbsp;{t("serverCard.download")} {formatBytes(down * 1024 * 1024)}/s
             </span>
           </div>
-          <div className="flex items-center justify-between gap-3">
+          <div className="grid min-h-10 grid-cols-[4rem_minmax(0,1fr)] items-center gap-2">
             <span className="font-medium">{t("serverCard.traffic")}</span>
-            <span className="truncate text-right tabular-nums text-muted-foreground">
-              {t("serverCard.upload")} {formatBytes(net_out_transfer)}&nbsp;&nbsp;{t("serverCard.download")} {formatBytes(net_in_transfer)}
-            </span>
+            <div className="flex min-w-0 items-center gap-2.5">
+              {traffic_limit > 0 && showTrafficBar && (
+                <TrafficCircle value={trafficPercentage} showPercentage={showTrafficPercent} />
+              )}
+              <div className="min-w-0 flex-1 text-right text-xs leading-5 tabular-nums text-foreground">
+                <div className="truncate">
+                  {t("serverCard.upload")} {formatBytes(net_out_transfer)}&nbsp;&nbsp;{t("serverCard.download")} {formatBytes(net_in_transfer)}
+                </div>
+                {traffic_limit > 0 && showTrafficBar && (
+                  <div className="truncate">
+                    {formatBytes(traffic_limit)}
+                    {showTrafficBillingMode ? ` (${formatTrafficLimitType(traffic_limit_type)})` : ""}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
           <div className="flex items-center justify-between gap-3">
             <span className="font-medium">{t("serverCard.load")}</span>
-            <span className="tabular-nums text-muted-foreground">
+            <span className="tabular-nums text-foreground">
               {load_1} | {load_5} | {load_15}
             </span>
           </div>
-          {traffic_limit > 0 && showTrafficBar && (
-            <TrafficBar used={trafficUsed} limit={traffic_limit} resetDay={traffic_reset_day} limitType={traffic_limit_type} />
-          )}
-          <div className="grid grid-cols-2 gap-3 border-t pt-3 text-xs">
+          <div className="grid grid-cols-2 gap-3 border-t pt-2.5 text-xs">
             <div className="min-w-0 truncate">
-              <span className="mr-1 text-muted-foreground">{t("serverCard.expires")}:</span>
+              <span className="mr-1">{t("serverCard.expires")}:</span>
               <span>{expiryDate || t("serverDetail.unknown")}</span>
             </div>
             <div className="min-w-0 truncate text-right">
-              <span className="mr-1 text-muted-foreground">{online ? t("online") : t("offline")}:</span>
+              <span className="mr-1">{online ? t("online") : t("offline")}:</span>
               <span>{online ? formatUptime(uptime, t("serverCard.days"), t("serverCard.hours")) : last_active_time_string || t("serverDetail.unknown")}</span>
             </div>
           </div>

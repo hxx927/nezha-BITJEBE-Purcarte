@@ -231,7 +231,7 @@ export default function Servers() {
   })
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-0">
+    <div className="mx-auto w-full sm:w-[85vw] sm:max-w-screen-2xl">
       <ServerOverview
         total={totalServers}
         online={onlineServers}
@@ -382,7 +382,7 @@ export default function Servers() {
         </section>
       )}
       {inline === "0" && (
-        <section ref={containerRef} className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,19rem),1fr))] gap-4 mt-6 server-card-list">
+        <section ref={containerRef} className="mt-6 grid grid-cols-[repeat(auto-fill,minmax(min(100%,18rem),1fr))] gap-4 server-card-list">
           {filteredServers.map((serverInfo) => (
             <ServerCard now={nezhaWsData.now} key={serverInfo.id} serverInfo={serverInfo} />
           ))}
