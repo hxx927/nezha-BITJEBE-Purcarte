@@ -1,4 +1,4 @@
-# nezha-BITJEBE
+# nezha-BITJEBE+Purcarte
 
 基于 [nezha-dash-v1](https://github.com/Akizon77/nezha-dash-v1) 二次开发的 [Komari Monitor](https://github.com/komari-monitor/komari) 自定义主题。
 
@@ -30,14 +30,14 @@
 ## 安装方法
 
 ### 方法一：通过 Komari 管理面板上传
-1. 从 [Releases](https://github.com/BITJEBE/nezha-BITJEBE/releases) 下载最新的 zip 文件
+1. 从 [Releases](https://github.com/hxx927/nezha-BITJEBE-Purcarte/releases) 下载最新的 zip 文件
 2. 进入 Komari 管理面板 -> 主题管理
 3. 点击上传并选择 zip 文件
 
 ### 方法二：从源码构建
 ```bash
-git clone https://github.com/BITJEBE/nezha-BITJEBE.git
-cd nezha-BITJEBE
+git clone https://github.com/hxx927/nezha-BITJEBE-Purcarte.git
+cd nezha-BITJEBE-Purcarte
 npm install
 npm run build
 ```
