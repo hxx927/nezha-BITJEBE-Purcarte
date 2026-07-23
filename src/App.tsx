@@ -6,6 +6,7 @@ import { Route, BrowserRouter as Router, Routes } from "react-router-dom"
 import { DashCommand } from "./components/DashCommand"
 import ErrorBoundary from "./components/ErrorBoundary"
 import Footer from "./components/Footer"
+import { FrostedGlassManager } from "./components/FrostedGlassManager"
 import Header, { RefreshToast } from "./components/Header"
 import PrivateAccessGate from "./components/PrivateAccessGate"
 import { useBackground } from "./hooks/use-background"
@@ -77,6 +78,7 @@ const MainApp: React.FC = () => {
 
   return (
     <ErrorBoundary>
+      <FrostedGlassManager />
       {/* 固定定位的背景层 */}
       {customBackgroundImage && (
         <div

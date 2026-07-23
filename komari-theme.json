@@ -2,7 +2,7 @@
     "name": "nezha-BITJEBE+Purcarte",
     "short": "nezha-BITJEBE-Purcarte",
     "description": "nezha-BITJEBE+Purcarte Theme for Komari Monitor",
-    "version": "1.1.9",
+    "version": "1.2.0",
     "author": "hxx927",
     "url": "https://github.com/hxx927/nezha-BITJEBE-Purcarte",
     "preview": "preview.png",
@@ -48,6 +48,45 @@
                 "options": "跟随系统,dark,light",
                 "default": "跟随系统",
                 "help": "强制使用指定主题模式，选择'跟随系统'则由用户自行切换。"
+            },
+            {
+                "name": "磨砂玻璃与标签设置",
+                "type": "title"
+            },
+            {
+                "key": "enableBlur",
+                "name": "启用磨砂玻璃效果",
+                "type": "switch",
+                "default": true,
+                "help": "启用后，背景图片上的主要卡片和详情弹窗会使用磨砂玻璃效果。"
+            },
+            {
+                "key": "blurValue",
+                "name": "磨砂玻璃模糊值",
+                "type": "number",
+                "default": 10,
+                "help": "数值越大模糊效果越明显，建议值为 5-20；设为 0 可关闭模糊。"
+            },
+            {
+                "key": "blurBackgroundColor",
+                "name": "磨砂玻璃背景色",
+                "type": "input",
+                "default": "rgba(255, 255, 255, 0.5)|rgba(0, 0, 0, 0.5)",
+                "help": "推荐使用 rgba 颜色值；用 | 分隔亮色和暗色模式的颜色，填写单个颜色时会同时用于两种模式。"
+            },
+            {
+                "key": "enableTransparentTags",
+                "name": "启用标签透明背景",
+                "type": "switch",
+                "default": true,
+                "help": "启用后，套餐和网络标签会使用透明背景；背景复杂导致难以辨识时可关闭。"
+            },
+            {
+                "key": "tagDefaultColorList",
+                "name": "标签默认颜色列表",
+                "type": "input",
+                "default": "ruby,gray,gold,bronze,brown,yellow,amber,orange,tomato,red",
+                "help": "未指定颜色的标签会按此颜色池顺序显示，使用逗号分隔。支持 gray、gold、bronze、brown、yellow、amber、orange、tomato、red、ruby、crimson、pink、plum、purple、violet、iris、indigo、blue、cyan、teal、jade、green、grass、lime、mint、sky。"
             },
             {
                 "name": "功能设置",

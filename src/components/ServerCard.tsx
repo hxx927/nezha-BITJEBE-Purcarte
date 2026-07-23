@@ -91,7 +91,6 @@ export default function ServerCard({ now, serverInfo }: { now: number; serverInf
     cpu_cores,
   } = formatNezhaInfo(now, serverInfo)
 
-  const customBackgroundImage = (window.CustomBackgroundImage as string) !== "" ? window.CustomBackgroundImage : undefined
   const parsedData = parsePublicNote(public_note)
   const billingData = parsedData?.billingDataMod
   const showTrafficBar = (window as unknown as Record<string, unknown>).ShowTrafficBar !== false
@@ -136,7 +135,6 @@ export default function ServerCard({ now, serverInfo }: { now: number; serverInf
         tabIndex={0}
         className={cn(
           "group flex min-h-[32rem] w-full cursor-pointer flex-col gap-3 overflow-hidden p-4 transition-colors hover:border-foreground/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:p-5",
-          customBackgroundImage && "bg-card/70 backdrop-blur-md",
           !online && "border-red-500/50 bg-red-500/5",
         )}
         onClick={openServerDetail}

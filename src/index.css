@@ -49,6 +49,10 @@
     --chart-8: 252 50% 50%;
     --chart-9: 288 50% 50%;
     --chart-10: 324 50% 50%;
+    --frosted-glass-blur: 10px;
+    --frosted-glass-light-background: rgba(255, 255, 255, 0.5);
+    --frosted-glass-dark-background: rgba(0, 0, 0, 0.5);
+    --frosted-glass-background: var(--frosted-glass-light-background);
   }
 
   .dark {
@@ -81,6 +85,7 @@
     --chart-8: 252 50% 50%;
     --chart-9: 288 50% 50%;
     --chart-10: 324 50% 50%;
+    --frosted-glass-background: var(--frosted-glass-dark-background);
   }
 }
 
@@ -100,6 +105,24 @@
 }
 
 @layer utilities {
+  .frosted-glass-enabled .frosted-glass-surface {
+    background-color: var(--frosted-glass-background) !important;
+    -webkit-backdrop-filter: blur(var(--frosted-glass-blur)) saturate(125%);
+    backdrop-filter: blur(var(--frosted-glass-blur)) saturate(125%);
+  }
+
+  .plan-tag-transparent {
+    border: 1px solid color-mix(in srgb, var(--plan-tag-color) 30%, transparent);
+    background-color: color-mix(in srgb, var(--plan-tag-color) 16%, transparent) !important;
+    color: color-mix(in srgb, var(--plan-tag-color) 82%, black);
+  }
+
+  .dark .plan-tag-transparent {
+    border-color: color-mix(in srgb, var(--plan-tag-color) 45%, transparent);
+    background-color: color-mix(in srgb, var(--plan-tag-color) 20%, transparent) !important;
+    color: color-mix(in srgb, var(--plan-tag-color) 55%, white);
+  }
+
   .step {
     counter-increment: step;
   }
