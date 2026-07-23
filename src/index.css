@@ -123,6 +123,29 @@
     color: color-mix(in srgb, var(--plan-tag-color) 55%, white);
   }
 
+  .server-card-offline {
+    background-color: rgb(254 226 226 / 0.72) !important;
+    background-image: linear-gradient(
+      45deg,
+      rgb(239 68 68 / 0.22) 25%,
+      transparent 25%,
+      transparent 50%,
+      rgb(239 68 68 / 0.22) 50%,
+      rgb(239 68 68 / 0.22) 75%,
+      transparent 75%,
+      transparent 100%
+    );
+    background-size: 32px 32px;
+  }
+
+  .dark .server-card-offline {
+    background-color: rgb(69 10 10 / 0.72) !important;
+  }
+
+  .frosted-glass-enabled .frosted-glass-surface.server-card-offline {
+    background-color: color-mix(in srgb, var(--frosted-glass-background) 65%, rgb(239 68 68 / 0.72)) !important;
+  }
+
   .step {
     counter-increment: step;
   }

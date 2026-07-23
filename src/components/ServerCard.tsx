@@ -152,7 +152,7 @@ export default function ServerCard({ now, serverInfo }: { now: number; serverInf
         tabIndex={0}
         className={cn(
           "group flex h-full w-full cursor-pointer flex-col gap-1.5 overflow-hidden px-2.5 py-3 transition-colors hover:border-foreground/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-          !online && "border-red-500/50 bg-red-500/5",
+          !online && "server-card-offline border-red-500/80 ring-2 ring-red-500/55 shadow-[0_10px_30px_rgba(220,38,38,0.24)]",
         )}
         onClick={openServerDetail}
         onKeyDown={handleCardKeyDown}
