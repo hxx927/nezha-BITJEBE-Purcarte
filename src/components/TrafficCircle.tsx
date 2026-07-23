@@ -16,7 +16,7 @@ function getStrokeColor(value: number) {
 
 export default function TrafficCircle({
   value,
-  size = 38,
+  size = 34,
   strokeWidth = 4,
   showPercentage = true,
   className,
