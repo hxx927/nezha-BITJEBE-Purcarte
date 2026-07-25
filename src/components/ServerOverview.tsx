@@ -132,8 +132,8 @@ export default function ServerOverview({ online, offline, total, up, down, upSpe
             </section>
             {!disableAnimatedMan && (
               <img
-                className="absolute right-3 top-[-85px] z-50 w-20 scale-90 group-hover:opacity-50 md:scale-100 transition-all"
-                alt={"animated-man"}
+                className="pointer-events-none absolute -top-24 right-2 z-20 h-32 w-auto max-w-[60%] object-contain transition-opacity group-hover:opacity-50 sm:-top-32 sm:right-3 sm:h-40 lg:-top-36 lg:h-44"
+                alt="Homepage illustration"
                 src={customIllustration}
                 loading="eager"
               />

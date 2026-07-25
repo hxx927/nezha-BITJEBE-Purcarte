@@ -2,7 +2,7 @@
     "name": "nezha-BITJEBE+Purcarte",
     "short": "nezha-BITJEBE-Purcarte",
     "description": "nezha-BITJEBE+Purcarte Theme for Komari Monitor",
-    "version": "1.3.4",
+    "version": "1.3.5",
     "author": "hxx927",
     "url": "https://github.com/hxx927/nezha-BITJEBE-Purcarte",
     "preview": "preview.png",
@@ -129,10 +129,10 @@
             },
             {
                 "key": "DisableAnimatedMan",
-                "name": "禁用动画插图",
+                "name": "隐藏首页插图",
                 "type": "switch",
                 "default": true,
-                "help": "开启后隐藏首页的动画人物插图。默认已开启（隐藏）。"
+                "help": "开启后隐藏首页右侧的人物插图。默认已开启（隐藏）。"
             },
             {
                 "key": "ForceUseSvgFlag",
