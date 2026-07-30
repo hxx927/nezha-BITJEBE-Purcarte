@@ -50,6 +50,7 @@ export function formatNezhaInfo(now: number, serverInfo: NezhaServer) {
     cpu_info: serverInfo.host.cpu || [],
     cpu_cores: serverInfo.host.cpu_cores || 0,
     gpu_info: serverInfo.host.gpu || [],
+    virtualization: serverInfo.host.virtualization || "",
     load_1: serverInfo.state.load_1?.toFixed(2) || 0.0,
     load_5: serverInfo.state.load_5?.toFixed(2) || 0.0,
     load_15: serverInfo.state.load_15?.toFixed(2) || 0.0,
@@ -812,6 +813,7 @@ export const komariToNezhaWebsocketResponse = (data: any): NezhaWebsocketRespons
       arch: server.arch,
       boot_time: bootTime,
       version: "",
+      virtualization: server.virtualization || "",
     }
 
     const state = status

@@ -79,7 +79,16 @@
     "download": "下載",
     "lastActive": "最後上報時間",
     "temperature": "溫度",
-    "bootTime": "啟動時間"
+    "bootTime": "啟動時間",
+    "disabled": "未啟用",
+    "swap": "交換記憶體",
+    "loadAverage": "負載（1 / 5 / 15 分鐘）",
+    "realtimeNetwork": "即時網路",
+    "totalTraffic": "總流量",
+    "virtualization": "虛擬化",
+    "realtime": "即時",
+    "last1Hours": "1 小時",
+    "last4Hours": "4 小時"
   },
   "serverDetailChart": {
     "process": "進程數",
@@ -87,7 +96,9 @@
     "mem": "內存",
     "swap": "虛擬記憶體",
     "upload": "上傳",
-    "download": "下載"
+    "download": "下載",
+    "historyError": "歷史資料載入失敗，請稍後重試",
+    "historyEmpty": "此時間範圍內暫無歷史資料"
   },
   "footer": {
     "themeBy": "主題-"

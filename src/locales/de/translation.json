@@ -35,7 +35,18 @@
     "region": "Region",
     "system": "System",
     "lastActive": "Letzte Aktivität",
-    "temperature": "Temperatur"
+    "temperature": "Temperatur",
+    "hours": "Stunden",
+    "bootTime": "Startzeit",
+    "disabled": "Deaktiviert",
+    "swap": "Swap",
+    "loadAverage": "Last (1 / 5 / 15 Min.)",
+    "realtimeNetwork": "Echtzeit-Netzwerk",
+    "totalTraffic": "Gesamtverkehr",
+    "virtualization": "Virtualisierung",
+    "realtime": "Echtzeit",
+    "last1Hours": "1 Stunde",
+    "last4Hours": "4 Stunden"
   },
   "theme": {
     "system": "Folgen Sie dem System",
@@ -93,7 +104,9 @@
     "process": "Prozess",
     "disk": "Festplatte",
     "mem": "Speicher",
-    "swap": "Swap"
+    "swap": "Swap",
+    "historyError": "Historische Daten konnten nicht geladen werden.",
+    "historyEmpty": "Keine historischen Daten in diesem Zeitraum."
   },
   "language": {
     "zh-TW": "Traditionelles Chinesisch",

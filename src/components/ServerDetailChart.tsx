@@ -1,10 +1,11 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { ChartConfig, ChartContainer } from "@/components/ui/chart"
+import { SharedClient } from "@/hooks/use-rpc2"
 import { useWebSocketContext } from "@/hooks/use-websocket-context"
 import { formatBytes } from "@/lib/format"
 import { cn, formatNezhaInfo, formatRelativeTime } from "@/lib/utils"
 import { NezhaServer, NezhaWebsocketResponse } from "@/types/nezha-api"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Area, AreaChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
 
@@ -44,7 +45,81 @@ type connectChartData = {
   udp: number
 }
 
-export default function ServerDetailChart({ server_id }: { server_id: string }) {
+type ServerDetailRange = 0 | 1 | 4
+
+type KomariLoadRecord = Record<string, unknown> & {
+  time?: string
+}
+
+type ChartProps = {
+  now: number
+  data: NezhaServer
+  messageHistory: { data: string }[]
+  isRealtime: boolean
+}
+
+function finiteNumber(value: unknown, fallback = 0): number {
+  const number = Number(value)
+  return Number.isFinite(number) ? number : fallback
+}
+
+function extractLoadRecords(result: unknown, uuid: string): KomariLoadRecord[] {
+  if (!result || typeof result !== "object") return []
+
+  const payload = "data" in result && result.data && typeof result.data === "object" ? result.data : result
+  if (Array.isArray(payload)) return payload as KomariLoadRecord[]
+
+  const payloadRecord = payload as Record<string, unknown>
+  const records = payloadRecord.records
+  if (Array.isArray(records)) return records as KomariLoadRecord[]
+  if (records && typeof records === "object" && Array.isArray((records as Record<string, unknown>)[uuid])) {
+    return (records as Record<string, KomariLoadRecord[]>)[uuid]
+  }
+  if (Array.isArray(payloadRecord[uuid])) return payloadRecord[uuid] as KomariLoadRecord[]
+  return []
+}
+
+function historyMessage(record: KomariLoadRecord, server: NezhaServer): { data: string } | null {
+  const timestamp = Date.parse(String(record.time || ""))
+  if (!Number.isFinite(timestamp)) return null
+
+  const historicalServer: NezhaServer = {
+    ...server,
+    last_active: String(record.time),
+    online: true,
+    host: {
+      ...server.host,
+      mem_total: finiteNumber(record.ram_total, server.host.mem_total),
+      swap_total: finiteNumber(record.swap_total, server.host.swap_total),
+      disk_total: finiteNumber(record.disk_total, server.host.disk_total),
+    },
+    state: {
+      ...server.state,
+      cpu: finiteNumber(record.cpu),
+      mem_used: finiteNumber(record.ram),
+      swap_used: finiteNumber(record.swap),
+      disk_used: finiteNumber(record.disk),
+      net_in_transfer: finiteNumber(record.net_total_down),
+      net_out_transfer: finiteNumber(record.net_total_up),
+      net_in_speed: finiteNumber(record.net_in),
+      net_out_speed: finiteNumber(record.net_out),
+      load_1: finiteNumber(record.load1 ?? record.load_1 ?? record.load),
+      load_5: finiteNumber(record.load5 ?? record.load_5),
+      load_15: finiteNumber(record.load15 ?? record.load_15),
+      tcp_conn_count: finiteNumber(record.connections),
+      udp_conn_count: finiteNumber(record.connections_udp),
+      process_count: finiteNumber(record.process),
+      temperatures: finiteNumber(record.temp) > 0 ? [{ Name: "CPU", Temperature: finiteNumber(record.temp) }] : [],
+      gpu: server.host.gpu.length > 0 ? [finiteNumber(record.gpu)] : [],
+    },
+  }
+
+  return {
+    data: JSON.stringify({ now: timestamp, servers: [historicalServer] } satisfies NezhaWebsocketResponse),
+  }
+}
+
+export default function ServerDetailChart({ server_id, hours = 0 }: { server_id: string; hours?: ServerDetailRange }) {
   const { lastMessage, connected, messageHistory } = useWebSocketContext()
 
   if (!connected && !lastMessage) {
@@ -63,19 +138,110 @@ export default function ServerDetailChart({ server_id }: { server_id: string }) 
     return <ServerDetailChartLoading />
   }
 
+  return <ServerDetailCharts key={hours} now={nezhaWsData.now} server={server} liveHistory={messageHistory} hours={hours} />
+}
+
+function ServerDetailCharts({
+  now,
+  server,
+  liveHistory,
+  hours,
+}: {
+  now: number
+  server: NezhaServer
+  liveHistory: { data: string }[]
+  hours: ServerDetailRange
+}) {
+  const { t } = useTranslation()
+  const [historicalRecords, setHistoricalRecords] = useState<KomariLoadRecord[]>([])
+  const [historyLoading, setHistoryLoading] = useState(hours !== 0)
+  const [historyError, setHistoryError] = useState(false)
+  const uuid = server.uuid || ""
+
+  useEffect(() => {
+    if (hours === 0) {
+      setHistoryLoading(false)
+      setHistoryError(false)
+      return
+    }
+    if (!uuid) {
+      setHistoryLoading(false)
+      setHistoryError(true)
+      return
+    }
+
+    let cancelled = false
+    setHistoryLoading(true)
+    setHistoryError(false)
+
+    SharedClient()
+      .callViaHTTP(
+        "common:getRecords",
+        {
+          type: "load",
+          uuid,
+          hours,
+          maxCount: hours === 1 ? 180 : 360,
+        },
+        { timeout: 30000 },
+      )
+      .then((result) => {
+        if (!cancelled) setHistoricalRecords(extractLoadRecords(result, uuid))
+      })
+      .catch((error) => {
+        console.warn("获取服务器历史负载失败:", error instanceof Error ? error.message : error)
+        if (!cancelled) setHistoryError(true)
+      })
+      .finally(() => {
+        if (!cancelled) setHistoryLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [hours, uuid])
+
+  const historicalHistory = useMemo(
+    () =>
+      historicalRecords
+        .map((record) => historyMessage(record, server))
+        .filter((message): message is { data: string } => message !== null)
+        .sort((a, b) => {
+          const left = JSON.parse(a.data) as NezhaWebsocketResponse
+          const right = JSON.parse(b.data) as NezhaWebsocketResponse
+          return right.now - left.now
+        }),
+    [historicalRecords, server],
+  )
+
+  if (historyLoading) return <ServerDetailChartLoading />
+
+  if (hours !== 0 && (historyError || historicalHistory.length === 0)) {
+    return (
+      <Card>
+        <CardContent className="flex min-h-44 items-center justify-center p-6 text-center text-sm text-muted-foreground">
+          {historyError ? t("serverDetailChart.historyError") : t("serverDetailChart.historyEmpty")}
+        </CardContent>
+      </Card>
+    )
+  }
+
+  const chartHistory = hours === 0 ? liveHistory : historicalHistory
+  const isRealtime = hours === 0
+
   return (
-    <section className="grid md:grid-cols-2 lg:grid-cols-3 grid-cols-1 gap-3 server-charts">
-      <CpuChart now={nezhaWsData.now} data={server} messageHistory={messageHistory} />
-      <ProcessChart now={nezhaWsData.now} data={server} messageHistory={messageHistory} />
-      <DiskChart now={nezhaWsData.now} data={server} messageHistory={messageHistory} />
-      <MemChart now={nezhaWsData.now} data={server} messageHistory={messageHistory} />
-      <NetworkChart now={nezhaWsData.now} data={server} messageHistory={messageHistory} />
-      <ConnectChart now={nezhaWsData.now} data={server} messageHistory={messageHistory} />
+    <section className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3 server-charts">
+      <CpuChart now={now} data={server} messageHistory={chartHistory} isRealtime={isRealtime} />
+      <ProcessChart now={now} data={server} messageHistory={chartHistory} isRealtime={isRealtime} />
+      <DiskChart now={now} data={server} messageHistory={chartHistory} isRealtime={isRealtime} />
+      <MemChart now={now} data={server} messageHistory={chartHistory} isRealtime={isRealtime} />
+      <NetworkChart now={now} data={server} messageHistory={chartHistory} isRealtime={isRealtime} />
+      <ConnectChart now={now} data={server} messageHistory={chartHistory} isRealtime={isRealtime} />
     </section>
   )
 }
 
-function CpuChart({ now, data, messageHistory }: { now: number; data: NezhaServer; messageHistory: { data: string }[] }) {
+function CpuChart({ now, data, messageHistory, isRealtime }: ChartProps) {
   const [cpuChartData, setCpuChartData] = useState<cpuChartData[]>([])
   const hasInitialized = useRef(false)
   const [historyLoaded, setHistoryLoaded] = useState(false)
@@ -109,7 +275,7 @@ function CpuChart({ now, data, messageHistory }: { now: number; data: NezhaServe
 
   // 更新实时数据
   useEffect(() => {
-    if (data && historyLoaded) {
+    if (isRealtime && data && historyLoaded) {
       const timestamp = Date.now().toString()
       setCpuChartData((prevData) => {
         let newData = [] as cpuChartData[]
@@ -127,7 +293,7 @@ function CpuChart({ now, data, messageHistory }: { now: number; data: NezhaServe
         return newData
       })
     }
-  }, [data, historyLoaded])
+  }, [cpu, data, historyLoaded, isRealtime])
 
   const chartConfig = {
     cpu: {
@@ -180,7 +346,7 @@ function CpuChart({ now, data, messageHistory }: { now: number; data: NezhaServe
   )
 }
 
-function ProcessChart({ now, data, messageHistory }: { now: number; data: NezhaServer; messageHistory: { data: string }[] }) {
+function ProcessChart({ now, data, messageHistory, isRealtime }: ChartProps) {
   const { t } = useTranslation()
   const [processChartData, setProcessChartData] = useState([] as processChartData[])
   const hasInitialized = useRef(false)
@@ -215,7 +381,7 @@ function ProcessChart({ now, data, messageHistory }: { now: number; data: NezhaS
 
   // 修改实时数据更新逻辑
   useEffect(() => {
-    if (data && historyLoaded) {
+    if (isRealtime && data && historyLoaded) {
       const timestamp = Date.now().toString()
       setProcessChartData((prevData) => {
         let newData = [] as processChartData[]
@@ -233,7 +399,7 @@ function ProcessChart({ now, data, messageHistory }: { now: number; data: NezhaS
         return newData
       })
     }
-  }, [data, historyLoaded])
+  }, [data, historyLoaded, isRealtime, process])
 
   const chartConfig = {
     process: {
@@ -292,7 +458,7 @@ function ProcessChart({ now, data, messageHistory }: { now: number; data: NezhaS
   )
 }
 
-function MemChart({ now, data, messageHistory }: { now: number; data: NezhaServer; messageHistory: { data: string }[] }) {
+function MemChart({ now, data, messageHistory, isRealtime }: ChartProps) {
   const { t } = useTranslation()
   const [memChartData, setMemChartData] = useState([] as memChartData[])
   const hasInitialized = useRef(false)
@@ -328,7 +494,7 @@ function MemChart({ now, data, messageHistory }: { now: number; data: NezhaServe
 
   // 修改实时数据更新逻辑
   useEffect(() => {
-    if (data && historyLoaded) {
+    if (isRealtime && data && historyLoaded) {
       const timestamp = Date.now().toString()
       setMemChartData((prevData) => {
         let newData = [] as memChartData[]
@@ -346,7 +512,7 @@ function MemChart({ now, data, messageHistory }: { now: number; data: NezhaServe
         return newData
       })
     }
-  }, [data, historyLoaded])
+  }, [data, historyLoaded, isRealtime, mem, swap])
 
   const chartConfig = {
     mem: {
@@ -435,7 +601,7 @@ function MemChart({ now, data, messageHistory }: { now: number; data: NezhaServe
   )
 }
 
-function DiskChart({ now, data, messageHistory }: { now: number; data: NezhaServer; messageHistory: { data: string }[] }) {
+function DiskChart({ now, data, messageHistory, isRealtime }: ChartProps) {
   const { t } = useTranslation()
   const [diskChartData, setDiskChartData] = useState([] as diskChartData[])
   const hasInitialized = useRef(false)
@@ -470,7 +636,7 @@ function DiskChart({ now, data, messageHistory }: { now: number; data: NezhaServ
 
   // 修改实时数据更新逻辑
   useEffect(() => {
-    if (data && historyLoaded) {
+    if (isRealtime && data && historyLoaded) {
       const timestamp = Date.now().toString()
       setDiskChartData((prevData) => {
         let newData = [] as diskChartData[]
@@ -488,7 +654,7 @@ function DiskChart({ now, data, messageHistory }: { now: number; data: NezhaServ
         return newData
       })
     }
-  }, [data, historyLoaded])
+  }, [data, disk, historyLoaded, isRealtime])
 
   const chartConfig = {
     disk: {
@@ -546,7 +712,7 @@ function DiskChart({ now, data, messageHistory }: { now: number; data: NezhaServ
   )
 }
 
-function NetworkChart({ now, data, messageHistory }: { now: number; data: NezhaServer; messageHistory: { data: string }[] }) {
+function NetworkChart({ now, data, messageHistory, isRealtime }: ChartProps) {
   const { t } = useTranslation()
   const [networkChartData, setNetworkChartData] = useState([] as networkChartData[])
   const hasInitialized = useRef(false)
@@ -582,7 +748,7 @@ function NetworkChart({ now, data, messageHistory }: { now: number; data: NezhaS
 
   // 修改实时数据更新逻辑
   useEffect(() => {
-    if (data && historyLoaded) {
+    if (isRealtime && data && historyLoaded) {
       const timestamp = Date.now().toString()
       setNetworkChartData((prevData) => {
         let newData = [] as networkChartData[]
@@ -600,7 +766,7 @@ function NetworkChart({ now, data, messageHistory }: { now: number; data: NezhaS
         return newData
       })
     }
-  }, [data, historyLoaded])
+  }, [data, down, historyLoaded, isRealtime, up])
 
   let maxDownload = Math.max(...networkChartData.map((item) => item.download))
   maxDownload = Math.ceil(maxDownload)
@@ -688,7 +854,7 @@ function NetworkChart({ now, data, messageHistory }: { now: number; data: NezhaS
   )
 }
 
-function ConnectChart({ now, data, messageHistory }: { now: number; data: NezhaServer; messageHistory: { data: string }[] }) {
+function ConnectChart({ now, data, messageHistory, isRealtime }: ChartProps) {
   const [connectChartData, setConnectChartData] = useState([] as connectChartData[])
   const hasInitialized = useRef(false)
   const [historyLoaded, setHistoryLoaded] = useState(false)
@@ -723,7 +889,7 @@ function ConnectChart({ now, data, messageHistory }: { now: number; data: NezhaS
 
   // 修改实时数据更新逻辑
   useEffect(() => {
-    if (data && historyLoaded) {
+    if (isRealtime && data && historyLoaded) {
       const timestamp = Date.now().toString()
       setConnectChartData((prevData) => {
         let newData = [] as connectChartData[]
@@ -741,7 +907,7 @@ function ConnectChart({ now, data, messageHistory }: { now: number; data: NezhaS
         return newData
       })
     }
-  }, [data, historyLoaded])
+  }, [data, historyLoaded, isRealtime, tcp, udp])
 
   const chartConfig = {
     tcp: {

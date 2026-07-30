@@ -25,7 +25,16 @@
     "download": "Bajada",
     "uptime": "Tiempo de actividad",
     "mem": "Memoria",
-    "upload": "Subida"
+    "upload": "Subida",
+    "disabled": "Desactivado",
+    "swap": "Memoria de intercambio",
+    "loadAverage": "Carga (1 / 5 / 15 min)",
+    "realtimeNetwork": "Red en tiempo real",
+    "totalTraffic": "Tráfico total",
+    "virtualization": "Virtualización",
+    "realtime": "Tiempo real",
+    "last1Hours": "1 hora",
+    "last4Hours": "4 horas"
   },
   "serverDetailChart": {
     "process": "Procesos",
@@ -33,7 +42,9 @@
     "mem": "Memoria",
     "swap": "Swap",
     "upload": "Subida",
-    "download": "Bajada"
+    "download": "Bajada",
+    "historyError": "No se pudieron cargar los datos históricos.",
+    "historyEmpty": "No hay datos históricos en este intervalo."
   },
   "language": {
     "en-US": "Inglés",

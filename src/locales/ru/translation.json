@@ -10,7 +10,9 @@
     "swap": "Swap",
     "upload": "Загрузка",
     "mem": "Mem",
-    "process": "Процесс"
+    "process": "Процесс",
+    "historyError": "Не удалось загрузить исторические данные.",
+    "historyEmpty": "За этот период исторических данных нет."
   },
   "serverCard": {
     "system": "Система",
@@ -93,7 +95,16 @@
     "region": "Регион",
     "bootTime": "Время загрузки",
     "upload": "Загрузка",
-    "temperature": "Температура"
+    "temperature": "Температура",
+    "disabled": "Отключено",
+    "swap": "Swap",
+    "loadAverage": "Нагрузка (1 / 5 / 15 мин.)",
+    "realtimeNetwork": "Сеть в реальном времени",
+    "totalTraffic": "Общий трафик",
+    "virtualization": "Виртуализация",
+    "realtime": "В реальном времени",
+    "last1Hours": "1 час",
+    "last4Hours": "4 часа"
   },
   "monitor": {
     "noData": "Нет данных мониторинга сервера, пожалуйста, сначала добавьте монитор службы",

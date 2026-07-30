@@ -59,7 +59,18 @@
     "upload": "பதிவேற்றும்",
     "download": "பதிவிறக்கம்",
     "lastActive": "கடைசி செயலில் நேரம்",
-    "temperature": "வெப்பநிலை"
+    "temperature": "வெப்பநிலை",
+    "hours": "மணி",
+    "bootTime": "தொடக்க நேரம்",
+    "disabled": "முடக்கப்பட்டது",
+    "swap": "Swap",
+    "loadAverage": "Load (1 / 5 / 15 min)",
+    "realtimeNetwork": "Live network",
+    "totalTraffic": "Total traffic",
+    "virtualization": "Virtualization",
+    "realtime": "Live",
+    "last1Hours": "1 hour",
+    "last4Hours": "4 hours"
   },
   "serverDetailChart": {
     "swap": "இடமாற்றம்",
@@ -67,7 +78,9 @@
     "download": "பதிவிறக்கம்",
     "process": "செயல்முறை",
     "disk": "வட்டு",
-    "mem": "மெம்"
+    "mem": "மெம்",
+    "historyError": "Historical data could not be loaded.",
+    "historyEmpty": "No historical data in this time range."
   },
   "footer": {
     "themeBy": "மூலம் கருப்பொருள் "

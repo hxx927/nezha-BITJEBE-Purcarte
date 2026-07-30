@@ -37,6 +37,7 @@ export interface NezhaServerHost {
   arch: string
   boot_time: number
   version: string
+  virtualization?: string
 }
 
 export interface NezhaServerStatus {

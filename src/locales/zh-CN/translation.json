@@ -79,7 +79,16 @@
     "download": "下载",
     "lastActive": "最后上报时间",
     "temperature": "温度",
-    "bootTime": "启动时间"
+    "bootTime": "启动时间",
+    "disabled": "未启用",
+    "swap": "交换内存",
+    "loadAverage": "负载（1 / 5 / 15 分钟）",
+    "realtimeNetwork": "实时网络",
+    "totalTraffic": "总流量",
+    "virtualization": "虚拟化",
+    "realtime": "实时",
+    "last1Hours": "1 小时",
+    "last4Hours": "4 小时"
   },
   "serverDetailChart": {
     "process": "进程数",
@@ -87,7 +96,9 @@
     "mem": "内存",
     "swap": "虚拟内存",
     "upload": "上传",
-    "download": "下载"
+    "download": "下载",
+    "historyError": "历史数据加载失败，请稍后重试",
+    "historyEmpty": "该时间范围内暂无历史数据"
   },
   "footer": {
     "themeBy": "主题-"

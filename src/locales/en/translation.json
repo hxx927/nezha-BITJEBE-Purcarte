@@ -79,7 +79,16 @@
     "download": "Download",
     "lastActive": "Last active time",
     "temperature": "Temperature",
-    "bootTime": "Boot time"
+    "bootTime": "Boot time",
+    "disabled": "Disabled",
+    "swap": "Swap",
+    "loadAverage": "Load (1 / 5 / 15 min)",
+    "realtimeNetwork": "Live network",
+    "totalTraffic": "Total traffic",
+    "virtualization": "Virtualization",
+    "realtime": "Live",
+    "last1Hours": "1 hour",
+    "last4Hours": "4 hours"
   },
   "serverDetailChart": {
     "process": "Process",
@@ -87,7 +96,9 @@
     "mem": "Mem",
     "swap": "Swap",
     "upload": "Upload",
-    "download": "Download"
+    "download": "Download",
+    "historyError": "Unable to load historical data. Please try again later.",
+    "historyEmpty": "No historical data in this time range."
   },
   "footer": {
     "themeBy": "Theme by "
