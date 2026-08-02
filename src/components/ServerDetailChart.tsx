@@ -75,31 +75,25 @@ function formatDetailChartTime(value: unknown, isRealtime: boolean): string {
     : date.toLocaleString([], { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })
 }
 
-function DetailChartTooltip({ config, isRealtime, valueFormatter }: DetailChartTooltipProps) {
+function DetailChartTooltipBody({ config, isRealtime, valueFormatter }: DetailChartTooltipProps) {
   return (
-    <ChartTooltip
-      isAnimationActive={false}
-      cursor={{ stroke: "hsl(var(--muted-foreground) / 0.45)", strokeDasharray: "3 3", strokeWidth: 1 }}
-      content={
-        <ChartTooltipContent
-          className="min-w-36 bg-background/95 backdrop-blur-sm"
-          labelFormatter={(value, payload) => formatDetailChartTime(payload[0]?.payload?.timeStamp ?? value, isRealtime)}
-          formatter={(value, name, item) => {
-            const dataKey = String(item.dataKey ?? name)
-            const indicatorColor = item.color || config[dataKey]?.color || "currentColor"
+    <ChartTooltipContent
+      className="min-w-36 bg-background/95 backdrop-blur-sm"
+      labelFormatter={(value, payload) => formatDetailChartTime(payload[0]?.payload?.timeStamp ?? value, isRealtime)}
+      formatter={(value, name, item) => {
+        const dataKey = String(item.dataKey ?? name)
+        const indicatorColor = item.color || config[dataKey]?.color || "currentColor"
 
-            return (
-              <>
-                <span className="size-2.5 shrink-0 rounded-[2px]" style={{ backgroundColor: indicatorColor }} />
-                <div className="flex flex-1 items-center justify-between gap-4 leading-none">
-                  <span className="text-muted-foreground">{config[dataKey]?.label || name}</span>
-                  <span className="font-mono font-medium tabular-nums text-foreground">{valueFormatter(Number(value), dataKey)}</span>
-                </div>
-              </>
-            )
-          }}
-        />
-      }
+        return (
+          <>
+            <span className="size-2.5 shrink-0 rounded-[2px]" style={{ backgroundColor: indicatorColor }} />
+            <div className="flex flex-1 items-center justify-between gap-4 leading-none">
+              <span className="text-muted-foreground">{config[dataKey]?.label || name}</span>
+              <span className="font-mono font-medium tabular-nums text-foreground">{valueFormatter(Number(value), dataKey)}</span>
+            </div>
+          </>
+        )
+      }}
     />
   )
 }
@@ -384,7 +378,11 @@ function CpuChart({ now, data, messageHistory, isRealtime }: ChartProps) {
                 tickFormatter={(value) => formatRelativeTime(value)}
               />
               <YAxis tickLine={false} axisLine={false} mirror={true} tickMargin={-15} domain={[0, 100]} tickFormatter={(value) => `${value}%`} />
-              <DetailChartTooltip config={chartConfig} isRealtime={isRealtime} valueFormatter={(value) => `${value.toFixed(2)}%`} />
+              <ChartTooltip
+                isAnimationActive={false}
+                cursor={{ stroke: "hsl(var(--muted-foreground) / 0.45)", strokeDasharray: "3 3", strokeWidth: 1 }}
+                content={<DetailChartTooltipBody config={chartConfig} isRealtime={isRealtime} valueFormatter={(value) => `${value.toFixed(2)}%`} />}
+              />
               <Area
                 isAnimationActive={false}
                 activeDot={{ r: 4, strokeWidth: 2 }}
@@ -499,7 +497,17 @@ function ProcessChart({ now, data, messageHistory, isRealtime }: ChartProps) {
                 tickFormatter={(value) => formatRelativeTime(value)}
               />
               <YAxis tickLine={false} axisLine={false} mirror={true} tickMargin={-15} />
-              <DetailChartTooltip config={chartConfig} isRealtime={isRealtime} valueFormatter={(value) => Math.round(value).toLocaleString()} />
+              <ChartTooltip
+                isAnimationActive={false}
+                cursor={{ stroke: "hsl(var(--muted-foreground) / 0.45)", strokeDasharray: "3 3", strokeWidth: 1 }}
+                content={
+                  <DetailChartTooltipBody
+                    config={chartConfig}
+                    isRealtime={isRealtime}
+                    valueFormatter={(value) => Math.round(value).toLocaleString()}
+                  />
+                }
+              />
               <Area
                 isAnimationActive={false}
                 activeDot={{ r: 4, strokeWidth: 2 }}
@@ -645,7 +653,11 @@ function MemChart({ now, data, messageHistory, isRealtime }: ChartProps) {
                 tickFormatter={(value) => formatRelativeTime(value)}
               />
               <YAxis tickLine={false} axisLine={false} mirror={true} tickMargin={-15} domain={[0, 100]} tickFormatter={(value) => `${value}%`} />
-              <DetailChartTooltip config={chartConfig} isRealtime={isRealtime} valueFormatter={(value) => `${value.toFixed(2)}%`} />
+              <ChartTooltip
+                isAnimationActive={false}
+                cursor={{ stroke: "hsl(var(--muted-foreground) / 0.45)", strokeDasharray: "3 3", strokeWidth: 1 }}
+                content={<DetailChartTooltipBody config={chartConfig} isRealtime={isRealtime} valueFormatter={(value) => `${value.toFixed(2)}%`} />}
+              />
               <Area
                 isAnimationActive={false}
                 activeDot={{ r: 4, strokeWidth: 2 }}
@@ -775,7 +787,11 @@ function DiskChart({ now, data, messageHistory, isRealtime }: ChartProps) {
                 tickFormatter={(value) => formatRelativeTime(value)}
               />
               <YAxis tickLine={false} axisLine={false} mirror={true} tickMargin={-15} domain={[0, 100]} tickFormatter={(value) => `${value}%`} />
-              <DetailChartTooltip config={chartConfig} isRealtime={isRealtime} valueFormatter={(value) => `${value.toFixed(2)}%`} />
+              <ChartTooltip
+                isAnimationActive={false}
+                cursor={{ stroke: "hsl(var(--muted-foreground) / 0.45)", strokeDasharray: "3 3", strokeWidth: 1 }}
+                content={<DetailChartTooltipBody config={chartConfig} isRealtime={isRealtime} valueFormatter={(value) => `${value.toFixed(2)}%`} />}
+              />
               <Area
                 isAnimationActive={false}
                 activeDot={{ r: 4, strokeWidth: 2 }}
@@ -927,7 +943,17 @@ function NetworkChart({ now, data, messageHistory, isRealtime }: ChartProps) {
                 domain={[1, maxDownload]}
                 tickFormatter={(value) => `${value.toFixed(0)}M/s`}
               />
-              <DetailChartTooltip config={chartConfig} isRealtime={isRealtime} valueFormatter={(value) => `${formatBytes(value * 1024 * 1024)}/s`} />
+              <ChartTooltip
+                isAnimationActive={false}
+                cursor={{ stroke: "hsl(var(--muted-foreground) / 0.45)", strokeDasharray: "3 3", strokeWidth: 1 }}
+                content={
+                  <DetailChartTooltipBody
+                    config={chartConfig}
+                    isRealtime={isRealtime}
+                    valueFormatter={(value) => `${formatBytes(value * 1024 * 1024)}/s`}
+                  />
+                }
+              />
               <Line
                 isAnimationActive={false}
                 activeDot={{ r: 4, strokeWidth: 2 }}
@@ -1067,7 +1093,17 @@ function ConnectChart({ now, data, messageHistory, isRealtime }: ChartProps) {
                 tickFormatter={(value) => formatRelativeTime(value)}
               />
               <YAxis tickLine={false} axisLine={false} mirror={true} tickMargin={-15} type="number" interval="preserveStartEnd" />
-              <DetailChartTooltip config={chartConfig} isRealtime={isRealtime} valueFormatter={(value) => Math.round(value).toLocaleString()} />
+              <ChartTooltip
+                isAnimationActive={false}
+                cursor={{ stroke: "hsl(var(--muted-foreground) / 0.45)", strokeDasharray: "3 3", strokeWidth: 1 }}
+                content={
+                  <DetailChartTooltipBody
+                    config={chartConfig}
+                    isRealtime={isRealtime}
+                    valueFormatter={(value) => Math.round(value).toLocaleString()}
+                  />
+                }
+              />
               <Line
                 isAnimationActive={false}
                 activeDot={{ r: 4, strokeWidth: 2 }}
