@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card"
-import { ChartConfig, ChartContainer } from "@/components/ui/chart"
+import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { SharedClient } from "@/hooks/use-rpc2"
 import { useWebSocketContext } from "@/hooks/use-websocket-context"
 import { formatBytes } from "@/lib/format"
@@ -56,6 +56,52 @@ type ChartProps = {
   data: NezhaServer
   messageHistory: { data: string }[]
   isRealtime: boolean
+}
+
+type DetailChartTooltipProps = {
+  config: ChartConfig
+  isRealtime: boolean
+  valueFormatter: (value: number, dataKey: string) => string
+}
+
+function formatDetailChartTime(value: unknown, isRealtime: boolean): string {
+  const timestamp = typeof value === "number" ? value : Number(value)
+  const date = new Date(timestamp)
+
+  if (!Number.isFinite(timestamp) || Number.isNaN(date.getTime())) return "-"
+
+  return isRealtime
+    ? date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
+    : date.toLocaleString([], { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })
+}
+
+function DetailChartTooltip({ config, isRealtime, valueFormatter }: DetailChartTooltipProps) {
+  return (
+    <ChartTooltip
+      isAnimationActive={false}
+      cursor={{ stroke: "hsl(var(--muted-foreground) / 0.45)", strokeDasharray: "3 3", strokeWidth: 1 }}
+      content={
+        <ChartTooltipContent
+          className="min-w-36 bg-background/95 backdrop-blur-sm"
+          labelFormatter={(value, payload) => formatDetailChartTime(payload[0]?.payload?.timeStamp ?? value, isRealtime)}
+          formatter={(value, name, item) => {
+            const dataKey = String(item.dataKey ?? name)
+            const indicatorColor = item.color || config[dataKey]?.color || "currentColor"
+
+            return (
+              <>
+                <span className="size-2.5 shrink-0 rounded-[2px]" style={{ backgroundColor: indicatorColor }} />
+                <div className="flex flex-1 items-center justify-between gap-4 leading-none">
+                  <span className="text-muted-foreground">{config[dataKey]?.label || name}</span>
+                  <span className="font-mono font-medium tabular-nums text-foreground">{valueFormatter(Number(value), dataKey)}</span>
+                </div>
+              </>
+            )
+          }}
+        />
+      }
+    />
+  )
 }
 
 function finiteNumber(value: unknown, fallback = 0): number {
@@ -298,6 +344,7 @@ function CpuChart({ now, data, messageHistory, isRealtime }: ChartProps) {
   const chartConfig = {
     cpu: {
       label: "CPU",
+      color: "hsl(var(--chart-1))",
     },
   } satisfies ChartConfig
 
@@ -337,7 +384,16 @@ function CpuChart({ now, data, messageHistory, isRealtime }: ChartProps) {
                 tickFormatter={(value) => formatRelativeTime(value)}
               />
               <YAxis tickLine={false} axisLine={false} mirror={true} tickMargin={-15} domain={[0, 100]} tickFormatter={(value) => `${value}%`} />
-              <Area isAnimationActive={false} dataKey="cpu" type="step" fill="hsl(var(--chart-1))" fillOpacity={0.3} stroke="hsl(var(--chart-1))" />
+              <DetailChartTooltip config={chartConfig} isRealtime={isRealtime} valueFormatter={(value) => `${value.toFixed(2)}%`} />
+              <Area
+                isAnimationActive={false}
+                activeDot={{ r: 4, strokeWidth: 2 }}
+                dataKey="cpu"
+                type="step"
+                fill="hsl(var(--chart-1))"
+                fillOpacity={0.3}
+                stroke="hsl(var(--chart-1))"
+              />
             </AreaChart>
           </ChartContainer>
         </section>
@@ -403,7 +459,8 @@ function ProcessChart({ now, data, messageHistory, isRealtime }: ChartProps) {
 
   const chartConfig = {
     process: {
-      label: "Process",
+      label: t("serverDetailChart.process"),
+      color: "hsl(var(--chart-2))",
     },
   } satisfies ChartConfig
 
@@ -442,8 +499,10 @@ function ProcessChart({ now, data, messageHistory, isRealtime }: ChartProps) {
                 tickFormatter={(value) => formatRelativeTime(value)}
               />
               <YAxis tickLine={false} axisLine={false} mirror={true} tickMargin={-15} />
+              <DetailChartTooltip config={chartConfig} isRealtime={isRealtime} valueFormatter={(value) => Math.round(value).toLocaleString()} />
               <Area
                 isAnimationActive={false}
+                activeDot={{ r: 4, strokeWidth: 2 }}
                 dataKey="process"
                 type="step"
                 fill="hsl(var(--chart-2))"
@@ -516,10 +575,12 @@ function MemChart({ now, data, messageHistory, isRealtime }: ChartProps) {
 
   const chartConfig = {
     mem: {
-      label: "Mem",
+      label: t("serverDetailChart.mem"),
+      color: "hsl(var(--chart-8))",
     },
     swap: {
-      label: "Swap",
+      label: t("serverDetailChart.swap"),
+      color: "hsl(var(--chart-10))",
     },
   } satisfies ChartConfig
 
@@ -584,9 +645,19 @@ function MemChart({ now, data, messageHistory, isRealtime }: ChartProps) {
                 tickFormatter={(value) => formatRelativeTime(value)}
               />
               <YAxis tickLine={false} axisLine={false} mirror={true} tickMargin={-15} domain={[0, 100]} tickFormatter={(value) => `${value}%`} />
-              <Area isAnimationActive={false} dataKey="mem" type="step" fill="hsl(var(--chart-8))" fillOpacity={0.3} stroke="hsl(var(--chart-8))" />
+              <DetailChartTooltip config={chartConfig} isRealtime={isRealtime} valueFormatter={(value) => `${value.toFixed(2)}%`} />
               <Area
                 isAnimationActive={false}
+                activeDot={{ r: 4, strokeWidth: 2 }}
+                dataKey="mem"
+                type="step"
+                fill="hsl(var(--chart-8))"
+                fillOpacity={0.3}
+                stroke="hsl(var(--chart-8))"
+              />
+              <Area
+                isAnimationActive={false}
+                activeDot={{ r: 4, strokeWidth: 2 }}
                 dataKey="swap"
                 type="step"
                 fill="hsl(var(--chart-10))"
@@ -658,7 +729,8 @@ function DiskChart({ now, data, messageHistory, isRealtime }: ChartProps) {
 
   const chartConfig = {
     disk: {
-      label: "Disk",
+      label: t("serverDetailChart.disk"),
+      color: "hsl(var(--chart-5))",
     },
   } satisfies ChartConfig
 
@@ -703,7 +775,16 @@ function DiskChart({ now, data, messageHistory, isRealtime }: ChartProps) {
                 tickFormatter={(value) => formatRelativeTime(value)}
               />
               <YAxis tickLine={false} axisLine={false} mirror={true} tickMargin={-15} domain={[0, 100]} tickFormatter={(value) => `${value}%`} />
-              <Area isAnimationActive={false} dataKey="disk" type="step" fill="hsl(var(--chart-5))" fillOpacity={0.3} stroke="hsl(var(--chart-5))" />
+              <DetailChartTooltip config={chartConfig} isRealtime={isRealtime} valueFormatter={(value) => `${value.toFixed(2)}%`} />
+              <Area
+                isAnimationActive={false}
+                activeDot={{ r: 4, strokeWidth: 2 }}
+                dataKey="disk"
+                type="step"
+                fill="hsl(var(--chart-5))"
+                fillOpacity={0.3}
+                stroke="hsl(var(--chart-5))"
+              />
             </AreaChart>
           </ChartContainer>
         </section>
@@ -776,10 +857,12 @@ function NetworkChart({ now, data, messageHistory, isRealtime }: ChartProps) {
 
   const chartConfig = {
     upload: {
-      label: "Upload",
+      label: t("serverDetailChart.upload"),
+      color: "hsl(var(--chart-1))",
     },
     download: {
-      label: "Download",
+      label: t("serverDetailChart.download"),
+      color: "hsl(var(--chart-4))",
     },
   } satisfies ChartConfig
 
@@ -844,8 +927,25 @@ function NetworkChart({ now, data, messageHistory, isRealtime }: ChartProps) {
                 domain={[1, maxDownload]}
                 tickFormatter={(value) => `${value.toFixed(0)}M/s`}
               />
-              <Line isAnimationActive={false} dataKey="upload" type="linear" stroke="hsl(var(--chart-1))" strokeWidth={1} dot={false} />
-              <Line isAnimationActive={false} dataKey="download" type="linear" stroke="hsl(var(--chart-4))" strokeWidth={1} dot={false} />
+              <DetailChartTooltip config={chartConfig} isRealtime={isRealtime} valueFormatter={(value) => `${formatBytes(value * 1024 * 1024)}/s`} />
+              <Line
+                isAnimationActive={false}
+                activeDot={{ r: 4, strokeWidth: 2 }}
+                dataKey="upload"
+                type="linear"
+                stroke="hsl(var(--chart-1))"
+                strokeWidth={1}
+                dot={false}
+              />
+              <Line
+                isAnimationActive={false}
+                activeDot={{ r: 4, strokeWidth: 2 }}
+                dataKey="download"
+                type="linear"
+                stroke="hsl(var(--chart-4))"
+                strokeWidth={1}
+                dot={false}
+              />
             </LineChart>
           </ChartContainer>
         </section>
@@ -912,9 +1012,11 @@ function ConnectChart({ now, data, messageHistory, isRealtime }: ChartProps) {
   const chartConfig = {
     tcp: {
       label: "TCP",
+      color: "hsl(var(--chart-1))",
     },
     udp: {
       label: "UDP",
+      color: "hsl(var(--chart-4))",
     },
   } satisfies ChartConfig
 
@@ -965,8 +1067,25 @@ function ConnectChart({ now, data, messageHistory, isRealtime }: ChartProps) {
                 tickFormatter={(value) => formatRelativeTime(value)}
               />
               <YAxis tickLine={false} axisLine={false} mirror={true} tickMargin={-15} type="number" interval="preserveStartEnd" />
-              <Line isAnimationActive={false} dataKey="tcp" type="linear" stroke="hsl(var(--chart-1))" strokeWidth={1} dot={false} />
-              <Line isAnimationActive={false} dataKey="udp" type="linear" stroke="hsl(var(--chart-4))" strokeWidth={1} dot={false} />
+              <DetailChartTooltip config={chartConfig} isRealtime={isRealtime} valueFormatter={(value) => Math.round(value).toLocaleString()} />
+              <Line
+                isAnimationActive={false}
+                activeDot={{ r: 4, strokeWidth: 2 }}
+                dataKey="tcp"
+                type="linear"
+                stroke="hsl(var(--chart-1))"
+                strokeWidth={1}
+                dot={false}
+              />
+              <Line
+                isAnimationActive={false}
+                activeDot={{ r: 4, strokeWidth: 2 }}
+                dataKey="udp"
+                type="linear"
+                stroke="hsl(var(--chart-4))"
+                strokeWidth={1}
+                dot={false}
+              />
             </LineChart>
           </ChartContainer>
         </section>
