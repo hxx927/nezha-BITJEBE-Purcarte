@@ -104,7 +104,10 @@
     "noData": "No hay datos de servidores, primero agregue un monitor de servicio",
     "monitorCount": "Servicios",
     "packetLoss": "Pérdida de paquetes",
-    "clearSelections": "Limpiar"
+    "clearSelections": "Limpiar",
+    "monitoringInterrupted": "Monitoreo interrumpido",
+    "historicalData": "Mostrando datos históricos",
+    "lastMonitoredAt": "Último monitoreo: {{time}}"
   },
   "error": {
     "pageNotFound": "Página no encontrada",

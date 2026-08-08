@@ -130,7 +130,10 @@
     "avgDelay": "Latency",
     "monitorCount": "Services",
     "packetLoss": "Packet Loss",
-    "clearSelections": "Clear"
+    "clearSelections": "Clear",
+    "monitoringInterrupted": "Monitoring interrupted",
+    "historicalData": "Showing historical monitoring data",
+    "lastMonitoredAt": "Last monitored: {{time}}"
   },
   "pwa": {
     "offlineReady": "App ready to work offline",

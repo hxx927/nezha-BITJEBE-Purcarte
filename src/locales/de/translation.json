@@ -58,7 +58,10 @@
     "noData": "Kein Server Monitoring Daten, bitte fügen sie zuerst einen Monitor hinzu",
     "avgDelay": "Latenz",
     "packetLoss": "Paketverlust",
-    "clearSelections": "Löschen"
+    "clearSelections": "Löschen",
+    "monitoringInterrupted": "Überwachung unterbrochen",
+    "historicalData": "Historische Überwachungsdaten",
+    "lastMonitoredAt": "Zuletzt überwacht: {{time}}"
   },
   "billingInfo": {
     "error": "Fehler",

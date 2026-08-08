@@ -108,7 +108,10 @@
     "avgDelay": "சுணக்கம்",
     "monitorCount": "சேவைகள்",
     "packetLoss": "தொகுப்பு இழப்பு",
-    "clearSelections": "அழி"
+    "clearSelections": "அழி",
+    "monitoringInterrupted": "கண்காணிப்பு துண்டிக்கப்பட்டது",
+    "historicalData": "வரலாற்று கண்காணிப்புத் தரவு",
+    "lastMonitoredAt": "கடைசியாக கண்காணித்தது: {{time}}"
   },
   "pwa": {
     "offlineReady": "ஆஃப்லைனில் வேலை செய்ய பயன்பாடு தயாராக உள்ளது",

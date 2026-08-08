@@ -133,7 +133,10 @@
     "avgDelay": "延遲",
     "monitorCount": "個監控",
     "packetLoss": "丟包率",
-    "clearSelections": "清除"
+    "clearSelections": "清除",
+    "monitoringInterrupted": "監測已中斷",
+    "historicalData": "以下為歷史監測資料",
+    "lastMonitoredAt": "最後監測：{{time}}"
   },
   "billingInfo": {
     "remaining": "剩餘天數",

@@ -131,7 +131,10 @@
     "avgDelay": "延迟",
     "monitorCount": "个监控服务",
     "packetLoss": "丢包率",
-    "clearSelections": "清除"
+    "clearSelections": "清除",
+    "monitoringInterrupted": "监测已中断",
+    "historicalData": "以下为历史监测数据",
+    "lastMonitoredAt": "最后监测：{{time}}"
   },
   "pwa": {
     "offlineReady": "应用可以离线使用了",

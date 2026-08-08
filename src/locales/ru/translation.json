@@ -111,7 +111,10 @@
     "avgDelay": "Задержка",
     "monitorCount": "Сервисы",
     "packetLoss": "Потеря пакетов",
-    "clearSelections": "Очистить"
+    "clearSelections": "Очистить",
+    "monitoringInterrupted": "Мониторинг прерван",
+    "historicalData": "Показаны исторические данные",
+    "lastMonitoredAt": "Последний мониторинг: {{time}}"
   },
   "pwa": {
     "newContent": "Доступен новый контент",

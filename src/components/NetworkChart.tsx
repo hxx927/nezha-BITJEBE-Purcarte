@@ -2,9 +2,10 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartConfig, ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
+import { useWebSocketContext } from "@/hooks/use-websocket-context"
 import { fetchMonitor } from "@/lib/nezha-api"
-import { cn, formatTime } from "@/lib/utils"
-import { NezhaMonitor, ServerMonitorChart } from "@/types/nezha-api"
+import { cn, formatNezhaInfo, formatTime } from "@/lib/utils"
+import { NezhaMonitor, NezhaWebsocketResponse, ServerMonitorChart } from "@/types/nezha-api"
 import { useQuery } from "@tanstack/react-query"
 import * as React from "react"
 import { useCallback, useMemo } from "react"
@@ -18,13 +19,13 @@ import { Switch } from "./ui/switch"
 
 interface ResultItem {
   created_at: number
-  [key: string]: number
+  [key: string]: number | null
 }
 
 /**
  * Helper method to calculate packet loss from delay data
  */
-const calculatePacketLoss = (delays: number[]): number[] => {
+const calculatePacketLoss = (delays: (number | null)[]): number[] => {
   if (!delays || delays.length === 0) return []
 
   const packetLossRates: number[] = []
@@ -45,7 +46,7 @@ const calculatePacketLoss = (delays: number[]): number[] => {
     } else {
       const start = Math.max(0, i - Math.floor(windowSize / 2))
       const end = Math.min(delays.length, i + Math.ceil(windowSize / 2))
-      const windowDelays = delays.slice(start, end).filter((d) => d > 0)
+      const windowDelays = delays.slice(start, end).filter((delay): delay is number => typeof delay === "number" && delay > 0)
 
       if (windowDelays.length > 2) {
         const mean = windowDelays.reduce((sum, d) => sum + d, 0) / windowDelays.length
@@ -91,15 +92,39 @@ const TIME_OPTIONS = [
 export function NetworkChart({ server_id, show }: { server_id: number; show: boolean }) {
   const { t } = useTranslation()
   const [hours, setHours] = React.useState(24)
+  const { lastMessage } = useWebSocketContext()
+  const previousOnline = React.useRef<boolean | null>(null)
 
-  const { data: monitorData } = useQuery({
+  const liveServerState = useMemo(() => {
+    if (!lastMessage) return null
+
+    try {
+      const snapshot = JSON.parse(lastMessage.data) as NezhaWebsocketResponse
+      const server = snapshot.servers.find((item) => item.id === server_id)
+      if (!server) return null
+
+      const info = formatNezhaInfo(snapshot.now, server)
+      return { online: info.online, now: snapshot.now }
+    } catch {
+      return null
+    }
+  }, [lastMessage, server_id])
+
+  const { data: monitorData, refetch } = useQuery({
     queryKey: ["monitor", server_id, hours],
     queryFn: () => fetchMonitor(server_id, hours),
     enabled: show,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
-    refetchInterval: hours <= 24 ? 10000 : hours <= 168 ? 60000 : 300000,
+    refetchInterval: liveServerState?.online === false ? false : hours <= 24 ? 10000 : hours <= 168 ? 60000 : 300000,
   })
+
+  React.useEffect(() => {
+    if (show && previousOnline.current === false && liveServerState?.online === true) {
+      void refetch()
+    }
+    previousOnline.current = liveServerState?.online ?? null
+  }, [liveServerState?.online, refetch, show])
 
   if (!monitorData) return <NetworkChartLoading />
 
@@ -114,6 +139,8 @@ export function NetworkChart({ server_id, show }: { server_id: number; show: boo
   const transformedData = transformData(monitorData.data)
 
   const formattedData = formatData(monitorData.data)
+
+  const latestMonitorTime = Math.max(0, ...monitorData.data.flatMap((monitor) => monitor.created_at))
 
   const chartDataKey = Object.keys(transformedData)
 
@@ -138,6 +165,9 @@ export function NetworkChart({ server_id, show }: { server_id: number; show: boo
       formattedData={formattedData}
       hours={hours}
       onHoursChange={setHours}
+      isServerOnline={liveServerState?.online ?? null}
+      latestMonitorTime={latestMonitorTime || null}
+      chartWindowEnd={Math.max(liveServerState?.now ?? Date.now(), latestMonitorTime)}
     />
   )
 }
@@ -150,6 +180,9 @@ export const NetworkChartClient = React.memo(function NetworkChart({
   formattedData,
   hours,
   onHoursChange,
+  isServerOnline,
+  latestMonitorTime,
+  chartWindowEnd,
 }: {
   chartDataKey: string[]
   chartConfig: ChartConfig
@@ -158,6 +191,9 @@ export const NetworkChartClient = React.memo(function NetworkChart({
   formattedData: ResultItem[]
   hours: number
   onHoursChange: (hours: number) => void
+  isServerOnline: boolean | null
+  latestMonitorTime: number | null
+  chartWindowEnd: number
 }) {
   const { t } = useTranslation()
 
@@ -199,6 +235,7 @@ export const NetworkChartClient = React.memo(function NetworkChart({
       chartDataKey.map((key) => {
         const monitorData = chartData[key]
         const lastDelay = monitorData[monitorData.length - 1].avg_delay
+        const hasCurrentDelay = isServerOnline !== false && lastDelay !== null && Number.isFinite(lastDelay)
 
         // Calculate average packet loss if available
         const packetLossData = monitorData.filter((item) => item.packet_loss !== undefined).map((item) => item.packet_loss!)
@@ -217,13 +254,19 @@ export const NetworkChartClient = React.memo(function NetworkChart({
           >
             <span className="whitespace-nowrap text-xs text-muted-foreground">{key}</span>
             <div className="flex flex-col gap-0.5">
-              <span className="text-md font-bold leading-none sm:text-lg">{lastDelay.toFixed(2)}ms</span>
-              {avgPacketLoss !== null && <span className="text-xs text-muted-foreground">{avgPacketLoss.toFixed(2)}% avg loss</span>}
+              <span className="text-md font-bold leading-none sm:text-lg">
+                {hasCurrentDelay && lastDelay !== null ? `${lastDelay.toFixed(2)}ms` : "--"}
+              </span>
+              {isServerOnline === false ? (
+                <span className="text-xs font-medium text-red-600 dark:text-red-400">{t("monitor.monitoringInterrupted")}</span>
+              ) : (
+                avgPacketLoss !== null && <span className="text-xs text-muted-foreground">{avgPacketLoss.toFixed(2)}% avg loss</span>
+              )}
             </div>
           </button>
         )
       }),
-    [chartDataKey, activeCharts, chartData, handleButtonClick],
+    [chartDataKey, activeCharts, chartData, handleButtonClick, isServerOnline, t],
   )
 
   const chartElements = useMemo(() => {
@@ -251,7 +294,7 @@ export const NetworkChartClient = React.memo(function NetworkChart({
           dataKey="avg_delay"
           stroke={getColorByIndex(chart)}
           yAxisId="delay"
-          connectNulls={true}
+          connectNulls={false}
         />,
       )
     } else if (activeCharts.length > 1) {
@@ -400,6 +443,12 @@ export const NetworkChartClient = React.memo(function NetworkChart({
     })
   }, [isPeakEnabled, activeCharts, formattedData, chartData, chartDataKey])
 
+  const chartWindowStart = chartWindowEnd - hours * 60 * 60 * 1000
+  const xAxisTicks = useMemo(
+    () => Array.from({ length: 7 }, (_, index) => chartWindowStart + ((chartWindowEnd - chartWindowStart) * index) / 6),
+    [chartWindowEnd, chartWindowStart],
+  )
+
   return (
     <Card
       className={cn({
@@ -408,9 +457,24 @@ export const NetworkChartClient = React.memo(function NetworkChart({
     >
       <CardHeader className="flex flex-col items-stretch space-y-0 p-0 sm:flex-row">
         <div className="flex flex-none flex-col justify-center gap-1 border-b px-6 py-4">
-          <CardTitle className="flex flex-none items-center gap-0.5 text-md">{serverName}</CardTitle>
-          <CardDescription className="text-xs">
-            {chartDataKey.length} {t("monitor.monitorCount")}
+          <CardTitle className="flex flex-wrap items-center gap-2 text-md">
+            <span>{serverName}</span>
+            {isServerOnline === false && (
+              <span className="rounded-md bg-red-500/15 px-1.5 py-0.5 text-[11px] font-medium text-red-700 dark:text-red-300">
+                {t("monitor.monitoringInterrupted")}
+              </span>
+            )}
+          </CardTitle>
+          <CardDescription className="flex flex-col gap-0.5 text-xs">
+            <span>
+              {chartDataKey.length} {t("monitor.monitorCount")}
+            </span>
+            {isServerOnline === false && (
+              <span>
+                {t("monitor.historicalData")}
+                {latestMonitorTime ? ` · ${t("monitor.lastMonitoredAt", { time: formatTime(latestMonitorTime) })}` : ""}
+              </span>
+            )}
           </CardDescription>
           <div className="flex items-center mt-0.5 space-x-3">
             <Select value={String(hours)} onValueChange={(v) => onHoursChange(Number(v))}>
@@ -450,35 +514,19 @@ export const NetworkChartClient = React.memo(function NetworkChart({
               <CartesianGrid vertical={false} />
               <XAxis
                 dataKey="created_at"
+                type="number"
+                scale="time"
+                domain={[chartWindowStart, chartWindowEnd]}
                 tickLine={true}
                 tickSize={3}
                 axisLine={false}
                 tickMargin={8}
                 minTickGap={80}
-                ticks={processedData
-                  .filter((item, index, array) => {
-                    if (array.length < 6) {
-                      return index === 0 || index === array.length - 1
-                    }
-
-                    // 计算数据的总时间跨度（毫秒）
-                    const timeSpan = array[array.length - 1].created_at - array[0].created_at
-                    const hours = timeSpan / (1000 * 60 * 60)
-
-                    // 根据时间跨度调整显示间隔
-                    if (hours <= 12) {
-                      // 12小时内，每60分钟显示一个刻度
-                      return index === 0 || index === array.length - 1 || new Date(item.created_at).getMinutes() % 60 === 0
-                    }
-                    // 超过12小时，每2小时显示一个刻度
-                    const date = new Date(item.created_at)
-                    return date.getMinutes() === 0 && date.getHours() % 2 === 0
-                  })
-                  .map((item) => item.created_at)}
+                ticks={xAxisTicks}
                 tickFormatter={(value) => {
                   const date = new Date(value)
-                  const minutes = date.getMinutes()
-                  return minutes === 0 ? `${date.getHours()}:00` : `${date.getHours()}:${minutes}`
+                  if (hours > 24) return `${date.getMonth() + 1}/${date.getDate()}`
+                  return `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`
                 }}
               />
               <YAxis yAxisId="delay" tickLine={false} axisLine={false} tickMargin={15} minTickGap={20} tickFormatter={(value) => `${value}ms`} />
@@ -586,11 +634,9 @@ const formatData = (rawData: NezhaMonitor[]) => {
       }
 
       const timeIndex = created_at.indexOf(time)
-      // @ts-expect-error - avg_delay is an array
       result[time][monitor_name] = timeIndex !== -1 ? avg_delay[timeIndex] : null
       // Add packet loss data if available
       if (packetLoss) {
-        // @ts-expect-error - packet_loss is calculated
         result[time][`${monitor_name}_packet_loss`] = timeIndex !== -1 ? packetLoss[timeIndex] : null
       }
     })

@@ -171,18 +171,15 @@ function monitorDataFromMetricSeries(
       packet_loss: [],
       sample_count: [],
     }
-    let lastGood = 0
-
     for (const point of points) {
       const time = metricPointTime(point)
       if (time === null || point.value === null || point.value === undefined) continue
       const count = metricPointCount(point)
       const loss = lossPoints?.get(time)
       const latency = latencyWithoutLoss(point.value, count, loss)
-      if (latency !== null) lastGood = latency
 
       monitor.created_at.push(time)
-      monitor.avg_delay.push(latency ?? lastGood)
+      monitor.avg_delay.push(latency)
       monitor.packet_loss!.push((loss?.ratio ?? (Number(point.value) < 0 ? 1 : 0)) * 100)
       monitor.sample_count!.push(loss?.count ?? count)
     }
@@ -476,17 +473,8 @@ export const fetchMonitor = async (server_id: number, hours: number = 24): Promi
       packetLoss.push(Number(ema.toFixed(2)))
     }
 
-    // 对延迟数据：将 -1 替换为上一个正常值（平滑显示）
-    const delays: number[] = []
-    let lastGood = 0
-    for (const v of rawVals) {
-      if (v >= 0) {
-        lastGood = v
-        delays.push(v)
-      } else {
-        delays.push(lastGood)
-      }
-    }
+    // 丢包没有有效延迟，保留为空值，让图表显示真实断点。
+    const delays = rawVals.map((value) => (value !== null && value >= 0 ? value : null))
 
     const timestamps = zip.map((z) => z.t)
 
