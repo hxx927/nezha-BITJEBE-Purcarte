@@ -104,7 +104,12 @@ export function NetworkChart({ server_id, show }: { server_id: number; show: boo
       if (!server) return null
 
       const info = formatNezhaInfo(snapshot.now, server)
-      return { online: info.online, now: snapshot.now }
+      const lastActiveTime = Date.parse(server.last_active)
+      return {
+        online: info.online,
+        now: snapshot.now,
+        lastActiveTime: Number.isFinite(lastActiveTime) ? lastActiveTime : null,
+      }
     } catch {
       return null
     }
@@ -136,11 +141,13 @@ export function NetworkChart({ server_id, show }: { server_id: number; show: boo
     )
   }
 
-  const transformedData = transformData(monitorData.data)
+  const visibleMonitorData = trimMonitorDataAfterOffline(monitorData.data, liveServerState)
 
-  const formattedData = formatData(monitorData.data)
+  const transformedData = transformData(visibleMonitorData)
 
-  const latestMonitorTime = Math.max(0, ...monitorData.data.flatMap((monitor) => monitor.created_at))
+  const formattedData = formatData(visibleMonitorData)
+
+  const latestMonitorTime = Math.max(0, ...visibleMonitorData.flatMap((monitor) => monitor.created_at))
 
   const chartDataKey = Object.keys(transformedData)
 
@@ -161,7 +168,7 @@ export function NetworkChart({ server_id, show }: { server_id: number; show: boo
       chartDataKey={chartDataKey}
       chartConfig={initChartConfig}
       chartData={transformedData}
-      serverName={monitorData.data[0].server_name}
+      serverName={visibleMonitorData[0]?.server_name || monitorData.data[0].server_name}
       formattedData={formattedData}
       hours={hours}
       onHoursChange={setHours}
@@ -310,7 +317,7 @@ export const NetworkChartClient = React.memo(function NetworkChart({
             dataKey={chart}
             stroke={getColorByIndex(chart)}
             name={chart}
-            connectNulls={true}
+            connectNulls={false}
             yAxisId="delay"
           />
         )),
@@ -327,7 +334,7 @@ export const NetworkChartClient = React.memo(function NetworkChart({
             dot={false}
             dataKey={key}
             stroke={getColorByIndex(key)}
-            connectNulls={true}
+            connectNulls={false}
             yAxisId="delay"
           />
         )),
@@ -403,6 +410,10 @@ export const NetworkChartClient = React.memo(function NetworkChart({
 
       // Special handling for single chart selection
       if (activeCharts.length === 1) {
+        // A missing ICMP response is a real discontinuity. Never let peak
+        // smoothing resurrect it from neighbouring valid samples.
+        if (point.avg_delay === null || point.avg_delay === undefined) return point
+
         // Process avg_delay for single chart
         const values = window.map((w) => w.avg_delay as number).filter((v) => v !== undefined && v !== null)
 
@@ -422,6 +433,8 @@ export const NetworkChartClient = React.memo(function NetworkChart({
         const keysToProcess = activeCharts.length > 0 ? activeCharts : chartDataKey
 
         keysToProcess.forEach((key) => {
+          if (point[key] === null || point[key] === undefined) return
+
           const values = window.map((w) => w[key]).filter((v) => v !== undefined && v !== null) as number[]
 
           if (values.length > 0) {
@@ -585,6 +598,32 @@ export const NetworkChartClient = React.memo(function NetworkChart({
     </Card>
   )
 })
+
+type LiveServerState = {
+  online: boolean
+  now: number
+  lastActiveTime: number | null
+} | null
+
+const trimMonitorDataAfterOffline = (data: NezhaMonitor[], liveServerState: LiveServerState): NezhaMonitor[] => {
+  if (liveServerState?.online !== false || liveServerState.lastActiveTime === null) return data
+
+  const cutoff = liveServerState.lastActiveTime
+  return data.map((monitor) => {
+    const keptIndices = monitor.created_at.reduce<number[]>((indices, timestamp, index) => {
+      if (timestamp <= cutoff) indices.push(index)
+      return indices
+    }, [])
+
+    return {
+      ...monitor,
+      created_at: keptIndices.map((index) => monitor.created_at[index]),
+      avg_delay: keptIndices.map((index) => monitor.avg_delay[index]),
+      packet_loss: monitor.packet_loss ? keptIndices.map((index) => monitor.packet_loss![index]) : undefined,
+      sample_count: monitor.sample_count ? keptIndices.map((index) => monitor.sample_count![index]) : undefined,
+    }
+  })
+}
 
 const transformData = (data: NezhaMonitor[]) => {
   const monitorData: ServerMonitorChart = {}
