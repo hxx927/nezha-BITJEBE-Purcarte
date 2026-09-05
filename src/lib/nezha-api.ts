@@ -494,16 +494,24 @@ export const fetchMonitor = async (server_id: number, hours: number = 24): Promi
         }
       }
 
-      // 剩余配额均匀分配给正常点
+      // 剩余配额均匀覆盖完整时间范围。不能使用向下取整的固定步长后
+      // 从头填满配额，否则在数据量略高于上限时会把正常点全部集中在
+      // 前半段，只在后半段留下丢包邻近点，形成数小时的人工空洞。
       const normalTarget = targetPoints - keepSet.size
       if (normalTarget > 0) {
         const normalIndices: number[] = []
         for (let i = 0; i < timestamps.length; i++) {
           if (!keepSet.has(i)) normalIndices.push(i)
         }
-        const step = Math.max(1, Math.floor(normalIndices.length / normalTarget))
-        for (let i = 0; i < normalIndices.length && keepSet.size < targetPoints; i += step) {
-          keepSet.add(normalIndices[i])
+
+        const sampleCount = Math.min(normalTarget, normalIndices.length)
+        if (sampleCount === 1) {
+          keepSet.add(normalIndices[Math.floor((normalIndices.length - 1) / 2)])
+        } else {
+          for (let sample = 0; sample < sampleCount; sample++) {
+            const position = Math.round((sample * (normalIndices.length - 1)) / (sampleCount - 1))
+            keepSet.add(normalIndices[position])
+          }
         }
       }
 

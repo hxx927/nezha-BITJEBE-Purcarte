@@ -317,7 +317,7 @@ export const NetworkChartClient = React.memo(function NetworkChart({
             dataKey={chart}
             stroke={getColorByIndex(chart)}
             name={chart}
-            connectNulls={false}
+            connectNulls={true}
             yAxisId="delay"
           />
         )),
@@ -334,7 +334,7 @@ export const NetworkChartClient = React.memo(function NetworkChart({
             dot={false}
             dataKey={key}
             stroke={getColorByIndex(key)}
-            connectNulls={false}
+            connectNulls={true}
             yAxisId="delay"
           />
         )),
