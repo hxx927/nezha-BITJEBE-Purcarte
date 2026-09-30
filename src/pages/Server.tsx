@@ -150,12 +150,18 @@ export default function Servers() {
   const offlineServers = filteredServers.filter((server) => !formatNezhaInfo(nezhaWsData.now, server).online)?.length || 0
   const up =
     filteredServers.reduce(
-      (total, server) => (formatNezhaInfo(nezhaWsData.now, server).online ? total + (server.state?.net_out_transfer ?? 0) : total),
+      (total, server) => {
+        const info = formatNezhaInfo(nezhaWsData.now, server)
+        return info.online ? total + info.net_out_transfer : total
+      },
       0,
     ) || 0
   const down =
     filteredServers.reduce(
-      (total, server) => (formatNezhaInfo(nezhaWsData.now, server).online ? total + (server.state?.net_in_transfer ?? 0) : total),
+      (total, server) => {
+        const info = formatNezhaInfo(nezhaWsData.now, server)
+        return info.online ? total + info.net_in_transfer : total
+      },
       0,
     ) || 0
 
@@ -218,10 +224,10 @@ export default function Servers() {
         comparison = (a.state?.net_in_speed ?? 0) - (b.state?.net_in_speed ?? 0)
         break
       case "up total":
-        comparison = (a.state?.net_out_transfer ?? 0) - (b.state?.net_out_transfer ?? 0)
+        comparison = formatNezhaInfo(nezhaWsData.now, a).net_out_transfer - formatNezhaInfo(nezhaWsData.now, b).net_out_transfer
         break
       case "down total":
-        comparison = (a.state?.net_in_transfer ?? 0) - (b.state?.net_in_transfer ?? 0)
+        comparison = formatNezhaInfo(nezhaWsData.now, a).net_in_transfer - formatNezhaInfo(nezhaWsData.now, b).net_in_transfer
         break
       default:
         comparison = (a.display_index ?? 0) - (b.display_index ?? 0)

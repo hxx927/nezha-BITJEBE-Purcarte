@@ -1,5 +1,6 @@
 import { SharedClient } from "@/hooks/use-rpc2"
-import { getKomariNodes, komariToNezhaWebsocketResponse } from "@/lib/utils"
+import { applyCycleTraffic, getKomariNodes, komariToNezhaWebsocketResponse } from "@/lib/utils"
+import { NezhaWebsocketResponse } from "@/types/nezha-api"
 import React, { useEffect, useRef, useState } from "react"
 
 import { WebSocketContext, WebSocketContextType } from "./websocket-context"
@@ -20,13 +21,24 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ url, child
     const rpc2 = SharedClient()
     return rpc2
       .call("common:getNodesLatestStatus")
-      .then((res) => {
+      .then(async (res) => {
         const nzwsres = komariToNezhaWebsocketResponse(res)
-        setLastMessage({ data: JSON.stringify(nzwsres) })
-        setMessageHistory((prev) => {
-          const updated = [{ data: JSON.stringify(nzwsres) }, ...prev]
-          return updated.slice(0, 30)
-        })
+        const publish = (snapshot: NezhaWebsocketResponse, addHistory: boolean) => {
+          const message = { data: JSON.stringify(snapshot) }
+          setLastMessage(message)
+          if (!addHistory) return
+          setMessageHistory((prev) => {
+            const updated = [message, ...prev]
+            return updated.slice(0, 30)
+          })
+        }
+
+        // Render the live status immediately. Cycle traffic is read from the
+        // historical records and may take longer on a large installation.
+        publish(nzwsres, false)
+        applyCycleTraffic(nzwsres.servers, nzwsres.now)
+          .then((servers) => publish({ ...nzwsres, servers }, true))
+          .catch((error) => console.warn("周期流量统计失败,保留实时状态:", error?.message || error))
       })
       .catch((err) => {
         // 单次失败不影响后续轮询;不向上抛出避免变成未处理的 Promise rejection

@@ -58,6 +58,10 @@ export interface NezhaServerStatus {
   process_count: number
   temperatures: temperature[]
   gpu: number[]
+  /** Traffic accumulated during the current billing cycle. */
+  cycle_net_in_transfer?: number
+  cycle_net_out_transfer?: number
+  traffic_cycle_start?: string
 }
 
 interface temperature {

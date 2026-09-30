@@ -19,6 +19,15 @@ export function formatNezhaInfo(now: number, serverInfo: NezhaServer) {
     typeof serverInfo.online === "boolean"
       ? serverInfo.online
       : Number.isFinite(lastActiveTime) && lastActiveTime > 0 && now - lastActiveTime <= 30000
+  const totalNetInTransfer = serverInfo.state.net_in_transfer || 0
+  const totalNetOutTransfer = serverInfo.state.net_out_transfer || 0
+  const cycleNetInTransfer = Number.isFinite(serverInfo.state.cycle_net_in_transfer)
+    ? Number(serverInfo.state.cycle_net_in_transfer)
+    : totalNetInTransfer
+  const cycleNetOutTransfer = Number.isFinite(serverInfo.state.cycle_net_out_transfer)
+    ? Number(serverInfo.state.cycle_net_out_transfer)
+    : totalNetOutTransfer
+
   return {
     ...serverInfo,
     cpu: serverInfo.state.cpu || 0,
@@ -38,8 +47,11 @@ export function formatNezhaInfo(now: number, serverInfo: NezhaServer) {
     stg: (serverInfo.state.disk_used / serverInfo.host.disk_total) * 100 || 0,
     country_code: serverInfo.country_code,
     platform: serverInfo.host.platform || "",
-    net_out_transfer: serverInfo.state.net_out_transfer || 0,
-    net_in_transfer: serverInfo.state.net_in_transfer || 0,
+    net_out_transfer: cycleNetOutTransfer,
+    net_in_transfer: cycleNetInTransfer,
+    total_net_out_transfer: totalNetOutTransfer,
+    total_net_in_transfer: totalNetInTransfer,
+    traffic_cycle_start: serverInfo.state.traffic_cycle_start || "",
     arch: serverInfo.host.arch || "",
     mem_total: serverInfo.host.mem_total || 0,
     swap_total: serverInfo.host.swap_total || 0,
@@ -60,6 +72,141 @@ export function formatNezhaInfo(now: number, serverInfo: NezhaServer) {
     traffic_reset_day: serverInfo.traffic_reset_day || 0,
     expired_at: serverInfo.expired_at || "",
   }
+}
+
+type CycleTraffic = {
+  up: number
+  down: number
+  start: string
+  key: string
+  fetchedAt: number
+}
+
+const cycleTrafficCache = new Map<string, CycleTraffic>()
+let cycleTrafficRefresh: Promise<void> | null = null
+const CYCLE_TRAFFIC_REFRESH_MS = 60_000
+
+function cycleLengthDays(cycle: unknown): number {
+  const text = String(cycle || "").trim().toLowerCase()
+  if (!text) return 0
+  const numeric = Number(text.match(/^(\d+(?:\.\d+)?)\s*(?:天|days?|d)?$/)?.[1])
+  if (Number.isFinite(numeric) && numeric > 0) return numeric
+  if (["月", "m", "mo", "month", "monthly"].includes(text)) return 30
+  if (["季", "q", "qr", "quarterly"].includes(text)) return 92
+  if (["半年", "h", "half", "semi-annually"].includes(text)) return 184
+  if (["年", "y", "yr", "year", "annual"].includes(text)) return 365
+  const years = text.match(/^(\d+)年$/)
+  return years ? Number(years[1]) * 365 : 0
+}
+
+function getCurrentTrafficCycle(server: NezhaServer, now: number): { start: Date; key: string } | null {
+  const billing = parsePublicNote(server.public_note)?.billingDataMod
+  if (!billing?.startDate) return null
+  const startMs = Date.parse(billing.startDate)
+  const days = cycleLengthDays(billing.cycle)
+  if (!Number.isFinite(startMs) || days <= 0) return null
+
+  const durationMs = days * 24 * 60 * 60 * 1000
+  const cycles = Math.max(0, Math.floor((now - startMs) / durationMs))
+  const currentStart = new Date(startMs + cycles * durationMs)
+  return { start: currentStart, key: `${server.uuid || server.id}:${currentStart.toISOString()}` }
+}
+
+function recordsFromLoadResponse(result: any): any[] {
+  if (Array.isArray(result?.records)) return result.records
+  if (result?.records && typeof result.records === "object") {
+    return Object.values(result.records).flatMap((items: any) => (Array.isArray(items) ? items : []))
+  }
+  return []
+}
+
+function sumTrafficRecords(records: any[]): { up: number; down: number } {
+  const sorted = [...records].sort((a, b) => Date.parse(a?.time || "") - Date.parse(b?.time || ""))
+  let up = 0
+  let down = 0
+  let previousUp: number | null = null
+  let previousDown: number | null = null
+
+  for (const record of sorted) {
+    const recordUp = Number(record?.traffic_up)
+    const recordDown = Number(record?.traffic_down)
+    if (Number.isFinite(recordUp) && recordUp >= 0) up += recordUp
+    if (Number.isFinite(recordDown) && recordDown >= 0) down += recordDown
+
+    // Older Komari responses may omit traffic_up/down. Reconstruct the delta
+    // from cumulative counters only for those records.
+    if (!Number.isFinite(recordUp) || !Number.isFinite(recordDown)) {
+      const totalUp = Number(record?.net_total_up)
+      const totalDown = Number(record?.net_total_down)
+      if (Number.isFinite(totalUp) && previousUp !== null) up += Math.max(0, totalUp - previousUp)
+      if (Number.isFinite(totalDown) && previousDown !== null) down += Math.max(0, totalDown - previousDown)
+    }
+    const totalUp = Number(record?.net_total_up)
+    const totalDown = Number(record?.net_total_down)
+    if (Number.isFinite(totalUp)) previousUp = totalUp
+    if (Number.isFinite(totalDown)) previousDown = totalDown
+  }
+  return { up, down }
+}
+
+async function refreshCycleTraffic(servers: NezhaServer[], now: number): Promise<void> {
+  const candidates = servers
+    .map((server) => ({ server, cycle: getCurrentTrafficCycle(server, now) }))
+    .filter((item): item is { server: NezhaServer; cycle: { start: Date; key: string } } => !!item.cycle)
+    .filter(({ server, cycle }) => {
+      const cached = cycleTrafficCache.get(String(server.uuid || server.id))
+      return !cached || cached.key !== cycle.key || now - cached.fetchedAt >= CYCLE_TRAFFIC_REFRESH_MS
+    })
+
+  if (candidates.length === 0) return
+  const client = SharedClient()
+  const end = new Date(now).toISOString()
+  const results = await Promise.all(
+    candidates.map(async ({ server, cycle }) => {
+      try {
+        const result = await client.callViaHTTP("common:getRecords", {
+          type: "load",
+          uuid: server.uuid,
+          start: cycle.start.toISOString(),
+          end,
+          maxCount: -1,
+        }, { timeout: 45_000 })
+        return { server, cycle, totals: sumTrafficRecords(recordsFromLoadResponse(result)) }
+      } catch {
+        return { server, cycle, totals: null }
+      }
+    }),
+  )
+
+  for (const { server, cycle, totals } of results) {
+    if (!totals) continue
+    cycleTrafficCache.set(String(server.uuid || server.id), { ...totals, start: cycle.start.toISOString(), key: cycle.key, fetchedAt: now })
+  }
+}
+
+export async function applyCycleTraffic(servers: NezhaServer[], now = Date.now()): Promise<NezhaServer[]> {
+  if (cycleTrafficRefresh) {
+    await cycleTrafficRefresh
+  } else {
+    cycleTrafficRefresh = refreshCycleTraffic(servers, now).finally(() => {
+      cycleTrafficRefresh = null
+    })
+    await cycleTrafficRefresh
+  }
+
+  return servers.map((server) => {
+    const cached = cycleTrafficCache.get(String(server.uuid || server.id))
+    if (!cached) return server
+    return {
+      ...server,
+      state: {
+        ...server.state,
+        cycle_net_out_transfer: cached.up,
+        cycle_net_in_transfer: cached.down,
+        traffic_cycle_start: cached.start,
+      },
+    }
+  })
 }
 
 export function calcTrafficUsed(up: number, down: number, type: string): number {
