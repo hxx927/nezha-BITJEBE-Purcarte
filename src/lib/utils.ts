@@ -86,29 +86,23 @@ const cycleTrafficCache = new Map<string, CycleTraffic>()
 let cycleTrafficRefresh: Promise<void> | null = null
 const CYCLE_TRAFFIC_REFRESH_MS = 60_000
 
-function cycleLengthDays(cycle: unknown): number {
-  const text = String(cycle || "").trim().toLowerCase()
-  if (!text) return 0
-  const numeric = Number(text.match(/^(\d+(?:\.\d+)?)\s*(?:天|days?|d)?$/)?.[1])
-  if (Number.isFinite(numeric) && numeric > 0) return numeric
-  if (["月", "m", "mo", "month", "monthly"].includes(text)) return 30
-  if (["季", "q", "qr", "quarterly"].includes(text)) return 92
-  if (["半年", "h", "half", "semi-annually"].includes(text)) return 184
-  if (["年", "y", "yr", "year", "annual"].includes(text)) return 365
-  const years = text.match(/^(\d+)年$/)
-  return years ? Number(years[1]) * 365 : 0
-}
-
 function getCurrentTrafficCycle(server: NezhaServer, now: number): { start: Date; key: string } | null {
-  const billing = parsePublicNote(server.public_note)?.billingDataMod
-  if (!billing?.startDate) return null
-  const startMs = Date.parse(billing.startDate)
-  const days = cycleLengthDays(billing.cycle)
-  if (!Number.isFinite(startMs) || days <= 0) return null
+  // Traffic reset is independent from the service billing cycle. A yearly
+  // or multi-year plan still normally receives a monthly traffic allowance.
+  // Tags and theme overrides can move the monthly reset date; day 1 is the
+  // default when no reset date is configured.
+  const resetDay = resolveTrafficResetDay(server) || 1
+  const current = new Date(now)
+  const resetDate = (year: number, month: number) => {
+    const lastDay = new Date(year, month + 1, 0).getDate()
+    return new Date(year, month, Math.min(resetDay, lastDay), 0, 0, 0, 0)
+  }
 
-  const durationMs = days * 24 * 60 * 60 * 1000
-  const cycles = Math.max(0, Math.floor((now - startMs) / durationMs))
-  const currentStart = new Date(startMs + cycles * durationMs)
+  let currentStart = resetDate(current.getFullYear(), current.getMonth())
+  if (currentStart > current) {
+    currentStart = resetDate(current.getFullYear(), current.getMonth() - 1)
+  }
+
   return { start: currentStart, key: `${server.uuid || server.id}:${currentStart.toISOString()}` }
 }
 
@@ -773,6 +767,9 @@ function parseTrafficResetDay(value: unknown): number | undefined {
 function resolveTrafficResetDay(server: any): number | undefined {
   const tagResetDay = parseTagMetadata(typeof server?.tags === "string" ? server.tags : "").trafficResetDay
   if (tagResetDay) return tagResetDay
+
+  const nodeResetDay = parseTrafficResetDay(server?.traffic_reset_day)
+  if (nodeResetDay) return nodeResetDay
 
   const win = typeof window === "undefined" ? {} : (window as unknown as Record<string, unknown>) || {}
   const overrides = parseJsonObject(win.TrafficResetDayOverrides)
