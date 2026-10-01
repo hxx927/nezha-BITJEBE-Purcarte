@@ -216,14 +216,15 @@ export default function ServerCardPing({
         </div>
       )}
       <TooltipProvider delayDuration={0}>
-        <div
-          className={capsules ? "server-card-ping-lines grid items-stretch gap-1" : "server-card-ping-lines grid gap-0.5"}
-          style={capsules ? { gridTemplateColumns: `repeat(${lines.length}, minmax(0, 1fr))` } : undefined}
-        >
-          {lines.map((line, index) => (
-            <PingLine key={`${index}:${line.name}:${capsules}`} {...line} capsules={capsules} />
-          ))}
-        </div>
+        {capsules ? (
+          <div className="server-card-ping-lines grid items-stretch gap-1" style={{ gridTemplateColumns: `repeat(${lines.length}, minmax(0, 1fr))` }}>
+            {lines.map((line, index) => (
+              <PingLine key={`${index}:${line.name}:${capsules}`} {...line} capsules={capsules} />
+            ))}
+          </div>
+        ) : (
+          lines.map((line, index) => <PingLine key={`${index}:${line.name}:${capsules}`} {...line} capsules={capsules} />)
+        )}
       </TooltipProvider>
       {!online && lastTime > 0 && (
         <div className="truncate text-[10px] text-muted-foreground">
