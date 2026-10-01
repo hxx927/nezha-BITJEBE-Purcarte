@@ -156,7 +156,7 @@ export default function ServerCard({ now, serverInfo, pingData, pingLoading = fa
         tabIndex={0}
         data-enhanced-glass={cardPingEnabled((window as unknown as Record<string, unknown>).CardEnhancedGlass)}
         className={cn(
-          "server-card-compact group flex h-full w-full cursor-pointer flex-col gap-1.5 overflow-hidden px-2.5 py-3 hover:border-foreground/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+          "server-card-compact group flex h-full w-full cursor-pointer flex-col gap-1.5 overflow-hidden px-[10px] pb-2 pt-2.5 hover:border-foreground/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
           !online && "server-card-offline border-red-500/80 ring-2 ring-red-500/55 shadow-[0_10px_30px_rgba(220,38,38,0.24)]",
         )}
         onClick={openServerDetail}
@@ -179,7 +179,7 @@ export default function ServerCard({ now, serverInfo, pingData, pingLoading = fa
                 <Server className="size-5" />
               )}
             </span>
-            <h2 className="truncate text-lg font-bold leading-tight">{name}</h2>
+            <h2 className="truncate text-[15px] font-bold leading-tight tracking-[-0.01em]">{name}</h2>
           </div>
           <button
             type="button"
@@ -237,7 +237,7 @@ export default function ServerCard({ now, serverInfo, pingData, pingLoading = fa
           </div>
         </div>
 
-        <div className="server-card-resources my-1 grid grid-cols-2 gap-x-2 gap-y-1">
+        <div className="server-card-resources my-[3px] grid grid-cols-2 gap-x-2.5 gap-y-1">
           <ResourceRow label="CPU" value={online ? cpu : 0} />
           <ResourceRow label={t("serverCard.mem")} value={online ? mem : 0} />
           <ResourceRow
@@ -249,7 +249,7 @@ export default function ServerCard({ now, serverInfo, pingData, pingLoading = fa
           <ResourceRow label={t("serverCard.stg")} value={online ? stg : 0} />
         </div>
 
-        <div className="server-card-stats flex flex-col gap-0.5 border-t pt-[5px] text-[11.5px] leading-[1.3]">
+        <div className="server-card-stats flex flex-col gap-0.5 border-t pt-[5px] text-[11.5px] leading-[1.25]">
           <div className="grid grid-cols-[3rem_minmax(0,1fr)] items-center gap-1.5">
             <span className="whitespace-nowrap font-medium">{t("serverCard.network")}</span>
             <span className="flex min-w-0 flex-wrap justify-end gap-x-1.5 text-right tabular-nums text-foreground">

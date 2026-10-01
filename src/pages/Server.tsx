@@ -397,7 +397,7 @@ export default function Servers() {
         </section>
       )}
       {inline === "0" && (
-        <section ref={containerRef} className="mt-6 grid grid-cols-[repeat(auto-fill,minmax(min(100%,15rem),1fr))] gap-2 server-card-list">
+        <section ref={containerRef} className="mt-6 grid grid-cols-[repeat(auto-fill,minmax(min(100%,14rem),1fr))] gap-2 server-card-list">
           {filteredServers.map((serverInfo) => (
             <ServerCard now={nezhaWsData.now} key={serverInfo.id} serverInfo={serverInfo} pingData={pingData} pingLoading={pingLoading} pingError={pingError} />
           ))}
