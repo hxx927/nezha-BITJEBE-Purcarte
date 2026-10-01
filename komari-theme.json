@@ -2,7 +2,7 @@
     "name": "nezha-BITJEBE+Purcarte",
     "short": "nezha-BITJEBE-Purcarte",
     "description": "nezha-BITJEBE+Purcarte Theme for Komari Monitor",
-    "version": "1.5.0",
+    "version": "1.5.1",
     "author": "hxx927",
     "url": "https://github.com/hxx927/nezha-BITJEBE-Purcarte",
     "preview": "preview.png",
@@ -262,6 +262,21 @@
                 "type": "switch",
                 "default": true,
                 "help": "在普通服务器卡片中显示最多三条监测线路的当前延迟、最近一小时真实丢包率和历史色条。离线或数据过期时显示 --，不影响行内模式。"
+            },
+            {
+                "key": "CardEnhancedGlass",
+                "name": "增强服务器卡片质感",
+                "type": "switch",
+                "default": true,
+                "help": "仅增强普通服务器卡片的背景对比度、柔和阴影和鼠标悬浮效果，适配亮暗模式；模糊值仍使用磨砂玻璃设置。关闭后恢复原有卡片表面，紧凑布局保留。离线卡片保留红色斜纹和边框。"
+            },
+            {
+                "key": "CardPingDisplayMode",
+                "name": "卡片网络监测样式",
+                "type": "select",
+                "options": "bars,capsules",
+                "default": "bars",
+                "help": "bars：紧凑色条，保留每条线路30格延迟和30格丢包历史及悬停操作；capsules：横排胶囊，仅显示线路名、延迟与丢包率，隐藏历史色条以降低高度。长线路名会自动换行；离线提示在两种模式下均保留。"
             },
             {
                 "key": "CardPingTasks",

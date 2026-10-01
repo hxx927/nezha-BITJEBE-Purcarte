@@ -151,6 +151,62 @@
     background-color: color-mix(in srgb, var(--frosted-glass-background) 65%, rgb(239 68 68 / 0.72)) !important;
   }
 
+  /* Scoped card styling: overview panels, dialogs and inline cards keep their own appearance. */
+  .server-card-compact {
+    transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .server-card-compact .tabular-nums {
+    font-variant-numeric: tabular-nums;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  .server-card-compact[data-enhanced-glass="true"]:not(.server-card-offline) {
+    border-color: hsl(var(--foreground) / 0.1);
+    box-shadow: 0 4px 16px -2px hsl(var(--foreground) / 0.1);
+  }
+
+  .dark .server-card-compact[data-enhanced-glass="true"]:not(.server-card-offline) {
+    box-shadow: 0 4px 16px -2px rgb(0 0 0 / 0.35);
+  }
+
+  .frosted-glass-enabled .server-card-compact[data-enhanced-glass="true"]:not(.server-card-offline) {
+    background-color: color-mix(in srgb, var(--frosted-glass-background) 55%, rgb(255 255 255)) !important;
+  }
+
+  .dark.frosted-glass-enabled .server-card-compact[data-enhanced-glass="true"]:not(.server-card-offline) {
+    background-color: color-mix(in srgb, var(--frosted-glass-background) 55%, rgb(18 18 24)) !important;
+  }
+
+  .server-card-compact[data-enhanced-glass="true"] .server-card-stats,
+  .server-card-compact[data-enhanced-glass="true"] > .grid-cols-3,
+  .server-card-compact[data-enhanced-glass="true"] [data-card-ping],
+  .server-card-compact[data-enhanced-glass="true"] .server-card-stats > .grid-cols-2:last-child {
+    border-color: hsl(var(--foreground) / 0.08);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .server-card-compact[data-enhanced-glass="true"]:hover {
+      transform: translateY(-2px);
+    }
+    .server-card-compact[data-enhanced-glass="true"]:not(.server-card-offline):hover {
+      border-color: hsl(var(--foreground) / 0.25);
+      box-shadow: 0 6px 24px -2px hsl(var(--foreground) / 0.15);
+    }
+    .dark .server-card-compact[data-enhanced-glass="true"]:not(.server-card-offline):hover {
+      box-shadow: 0 6px 24px -2px rgb(0 0 0 / 0.5);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .server-card-compact {
+      transition: none;
+    }
+    .server-card-compact[data-enhanced-glass="true"]:hover {
+      transform: none;
+    }
+  }
+
   .step {
     counter-increment: step;
   }
