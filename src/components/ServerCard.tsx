@@ -34,15 +34,15 @@ function ResourceRow({ label, value, valueLabel, disabled }: ResourceRowProps) {
         : "bg-green-500"
 
   return (
-    <div className="server-card-resource grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-1 gap-y-0.5 text-[11px] leading-4">
+    <div className="server-card-resource grid min-w-0 grid-cols-[2rem_minmax(0,1fr)_2rem] items-center gap-[3px] text-[11.5px]">
       <span className="font-medium">{label}</span>
-      <span className="text-right tabular-nums text-foreground">{valueLabel || `${normalizedValue.toFixed(0)}%`}</span>
       <Progress
         value={normalizedValue}
-        className="col-span-2 h-[5px] bg-secondary/80"
+        className="h-[5px] bg-secondary/80"
         indicatorClassName={indicatorClassName}
         aria-label={`${label} ${valueLabel || `${normalizedValue.toFixed(0)}%`}`}
       />
+      <span className="break-words text-right tabular-nums text-foreground">{valueLabel || `${normalizedValue.toFixed(0)}%`}</span>
     </div>
   )
 }
@@ -156,7 +156,7 @@ export default function ServerCard({ now, serverInfo, pingData, pingLoading = fa
         tabIndex={0}
         data-enhanced-glass={cardPingEnabled((window as unknown as Record<string, unknown>).CardEnhancedGlass)}
         className={cn(
-          "server-card-compact group flex h-full w-full cursor-pointer flex-col gap-1 overflow-hidden px-2.5 pb-2 pt-2.5 hover:border-foreground/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+          "server-card-compact group flex h-full w-full cursor-pointer flex-col gap-1.5 overflow-hidden px-2.5 py-3 hover:border-foreground/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
           !online && "server-card-offline border-red-500/80 ring-2 ring-red-500/55 shadow-[0_10px_30px_rgba(220,38,38,0.24)]",
         )}
         onClick={openServerDetail}
@@ -179,11 +179,11 @@ export default function ServerCard({ now, serverInfo, pingData, pingLoading = fa
                 <Server className="size-5" />
               )}
             </span>
-            <h2 className="truncate text-[15px] font-bold leading-tight tracking-[-0.01em]">{name}</h2>
+            <h2 className="truncate text-lg font-bold leading-tight">{name}</h2>
           </div>
           <button
             type="button"
-            className="flex size-7 shrink-0 items-center justify-center rounded-full text-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="flex size-8 shrink-0 items-center justify-center rounded-full text-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-label={t("serverCard.details")}
             title={t("serverCard.details")}
             onClick={(event) => {
@@ -237,7 +237,7 @@ export default function ServerCard({ now, serverInfo, pingData, pingLoading = fa
           </div>
         </div>
 
-        <div className="server-card-resources grid grid-cols-2 gap-x-2.5 gap-y-1 py-[3px]">
+        <div className="server-card-resources my-1 grid grid-cols-2 gap-x-2 gap-y-1">
           <ResourceRow label="CPU" value={online ? cpu : 0} />
           <ResourceRow label={t("serverCard.mem")} value={online ? mem : 0} />
           <ResourceRow
@@ -249,7 +249,7 @@ export default function ServerCard({ now, serverInfo, pingData, pingLoading = fa
           <ResourceRow label={t("serverCard.stg")} value={online ? stg : 0} />
         </div>
 
-        <div className="server-card-stats mt-auto space-y-0.5 border-t pt-[5px] text-[11px] leading-4">
+        <div className="server-card-stats flex flex-col gap-0.5 border-t pt-[5px] text-[11.5px] leading-[1.3]">
           <div className="grid grid-cols-[3rem_minmax(0,1fr)] items-center gap-1.5">
             <span className="whitespace-nowrap font-medium">{t("serverCard.network")}</span>
             <span className="flex min-w-0 flex-wrap justify-end gap-x-1.5 text-right text-[11px] tabular-nums text-foreground">
@@ -263,7 +263,7 @@ export default function ServerCard({ now, serverInfo, pingData, pingLoading = fa
             <span className="whitespace-nowrap font-medium">{t("serverCard.traffic")}</span>
             <div className="flex min-w-0 items-center gap-1.5">
               {traffic_limit > 0 && showTrafficBar && (
-                <TrafficCircle value={trafficPercentage} size={28} strokeWidth={3} showPercentage={showTrafficPercent} />
+                <TrafficCircle value={trafficPercentage} showPercentage={showTrafficPercent} />
               )}
               <div className="min-w-0 flex-1 text-right text-[11px] leading-4 tabular-nums text-foreground">
                 <div className="flex flex-wrap justify-end gap-x-1.5">
@@ -288,7 +288,7 @@ export default function ServerCard({ now, serverInfo, pingData, pingLoading = fa
           {cardPingEnabled((window as unknown as Record<string, unknown>).CardPingEnabled) && (
             <ServerCardPing server={serverInfo} online={online} now={now} data={pingData} loading={pingLoading} error={pingError} />
           )}
-          <div className="grid grid-cols-2 gap-1.5 border-t pt-[3px] text-[10.5px] text-muted-foreground">
+          <div className="grid grid-cols-2 gap-1.5 border-t pt-1 text-[10.5px]">
             <div className="min-w-0 truncate">
               <span className="mr-1">{t("serverCard.expires")}:</span>
               <span>{expiryDate || t("serverDetail.unknown")}</span>

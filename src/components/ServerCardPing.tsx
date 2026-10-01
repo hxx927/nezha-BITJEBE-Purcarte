@@ -57,7 +57,7 @@ function PingLine({
           className={cn(
             "block w-full min-w-0 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
             capsules
-              ? "h-full border border-foreground/10 bg-foreground/[0.04] px-1 py-1 text-center hover:bg-foreground/[0.08]"
+              ? "h-full rounded-[5px] border border-white/[0.08] bg-white/[0.06] px-0.5 py-[3px] text-center"
               : "space-y-0.5 px-0.5 py-px text-left hover:bg-foreground/[0.04]",
           )}
           aria-label={`${name}, ${status || `${t("monitor.avgDelay")} ${valueLabel(summary.latency, "ms")}, ${t("monitor.packetLoss")} ${valueLabel(summary.loss, "%")}`}${capsules ? "" : `. ${t("cardPing.keyboard")}`}`}
@@ -90,12 +90,14 @@ function PingLine({
           }}
         >
           {capsules ? (
-            <span className="flex min-w-0 flex-col items-center gap-0.5 text-[11px] leading-[13px]">
-              <span className="w-full whitespace-normal break-words font-medium [overflow-wrap:anywhere]">{name}</span>
-              <span className={cn("whitespace-nowrap tabular-nums", unavailable ? "text-muted-foreground" : "text-foreground")}>
-                {valueLabel(unavailable ? null : summary.latency, "ms")}
+            <span className="flex min-w-0 flex-col items-center gap-px text-[10px] leading-[1.15]">
+              <span className="flex w-full flex-wrap items-baseline justify-between gap-x-0.5 px-0.5">
+                <span className="whitespace-normal break-words text-[9.5px] font-medium [overflow-wrap:anywhere]">{name}</span>
+                <span className={cn("whitespace-nowrap tabular-nums", unavailable ? "text-muted-foreground" : "text-foreground")}>
+                  {valueLabel(unavailable ? null : summary.latency, "ms")}
+                </span>
               </span>
-              <span className="w-full break-words text-[10px] text-muted-foreground" aria-label={t("monitor.packetLoss")}>
+              <span className="w-full break-words text-[9px] text-[#94a3b8]" aria-label={t("monitor.packetLoss")}>
                 {status && status !== "--" ? (
                   status
                 ) : (
@@ -200,7 +202,7 @@ export default function ServerCardPing({
   const lastTime = Math.max(0, ...lines.map((line) => line.summary.lastTime || 0))
   return (
     <section
-      className="space-y-1 border-t pt-1"
+      className={cn("space-y-1 border-t", capsules ? "mt-0.5 pt-[5px]" : "pt-1")}
       data-card-ping="true"
       data-ping-display={capsules ? "capsules" : "bars"}
       aria-label={t("cardPing.title")}

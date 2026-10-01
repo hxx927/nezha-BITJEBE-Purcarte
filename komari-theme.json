@@ -2,7 +2,7 @@
     "name": "nezha-BITJEBE+Purcarte",
     "short": "nezha-BITJEBE-Purcarte",
     "description": "nezha-BITJEBE+Purcarte Theme for Komari Monitor",
-    "version": "1.5.1",
+    "version": "1.5.2",
     "author": "hxx927",
     "url": "https://github.com/hxx927/nezha-BITJEBE-Purcarte",
     "preview": "preview.png",
@@ -268,7 +268,7 @@
                 "name": "增强服务器卡片质感",
                 "type": "switch",
                 "default": true,
-                "help": "仅增强普通服务器卡片的背景对比度、柔和阴影和鼠标悬浮效果，适配亮暗模式；模糊值仍使用磨砂玻璃设置。关闭后恢复原有卡片表面，紧凑布局保留。离线卡片保留红色斜纹和边框。"
+                "help": "普通服务器卡片采用第一套CSS的白色半透明边框、0 4px 20px深阴影和悬浮上移2px。背景色直接使用磨砂玻璃背景色，不再混色；模糊值使用原设置。要还原示例：强制主题颜色选dark，模糊值14，背景色填rgba(18,18,24,0.75)|rgba(18,18,24,0.75)。关闭仅恢复原表面，紧凑布局保留。离线红色斜纹和边框保留。"
             },
             {
                 "key": "CardPingDisplayMode",
