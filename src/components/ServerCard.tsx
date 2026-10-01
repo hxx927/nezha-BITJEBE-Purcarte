@@ -252,7 +252,7 @@ export default function ServerCard({ now, serverInfo, pingData, pingLoading = fa
         <div className="server-card-stats flex flex-col gap-0.5 border-t pt-[5px] text-[11.5px] leading-[1.3]">
           <div className="grid grid-cols-[3rem_minmax(0,1fr)] items-center gap-1.5">
             <span className="whitespace-nowrap font-medium">{t("serverCard.network")}</span>
-            <span className="flex min-w-0 flex-wrap justify-end gap-x-1.5 text-right text-[11px] tabular-nums text-foreground">
+            <span className="flex min-w-0 flex-wrap justify-end gap-x-1.5 text-right tabular-nums text-foreground">
               <span className="whitespace-nowrap">
                 ↑ {formatBytes(up * 1024 * 1024)}/s
               </span>
@@ -265,7 +265,7 @@ export default function ServerCard({ now, serverInfo, pingData, pingLoading = fa
               {traffic_limit > 0 && showTrafficBar && (
                 <TrafficCircle value={trafficPercentage} showPercentage={showTrafficPercent} />
               )}
-              <div className="min-w-0 flex-1 text-right text-[11px] leading-4 tabular-nums text-foreground">
+              <div className="min-w-0 flex-1 text-right leading-4 tabular-nums text-foreground">
                 <div className="flex flex-wrap justify-end gap-x-1.5">
                   <span className="whitespace-nowrap">↑ {formatBytes(net_out_transfer)}</span>
                   <span className="whitespace-nowrap">↓ {formatBytes(net_in_transfer)}</span>
