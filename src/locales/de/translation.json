@@ -53,6 +53,16 @@
     "light": "Hell",
     "dark": "Dunkel"
   },
+  "cardPing": {
+    "title": "Netzwerküberwachung",
+    "window": "1h · Verlust",
+    "loading": "Laden",
+    "noData": "Keine Daten",
+    "stale": "Veraltet",
+    "error": "Aktualisierung fehlgeschlagen",
+    "noSamples": "Keine Messungen",
+    "keyboard": "Mit den Pfeiltasten links und rechts den Verlauf prüfen"
+  },
   "monitor": {
     "monitorCount": "Services",
     "noData": "Kein Server Monitoring Daten, bitte fügen sie zuerst einen Monitor hinzu",

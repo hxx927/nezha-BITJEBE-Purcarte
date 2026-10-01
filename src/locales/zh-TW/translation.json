@@ -127,6 +127,16 @@
     "Detail": "詳細資訊",
     "Network": "網路"
   },
+  "cardPing": {
+    "title": "網路監測",
+    "window": "1小時 · 丟包",
+    "loading": "載入中",
+    "noData": "無資料",
+    "stale": "已過期",
+    "error": "重新整理失敗",
+    "noSamples": "無監測資料",
+    "keyboard": "使用左右方向鍵查看歷史"
+  },
   "monitor": {
     "noData": "沒有服務監控數據，請在管理後台服務新增監控任務",
     "status": "狀態",

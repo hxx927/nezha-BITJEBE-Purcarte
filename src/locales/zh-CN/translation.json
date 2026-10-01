@@ -126,6 +126,16 @@
     "Detail": "详情",
     "Network": "网络"
   },
+  "cardPing": {
+    "title": "网络监测",
+    "window": "1小时 · 丢包",
+    "loading": "加载中",
+    "noData": "无数据",
+    "stale": "已过期",
+    "error": "刷新失败",
+    "noSamples": "无监测数据",
+    "keyboard": "使用左右方向键查看历史"
+  },
   "monitor": {
     "noData": "没有服务监控数据，请在管理后台服务页添加监控任务",
     "avgDelay": "延迟",

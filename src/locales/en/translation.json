@@ -125,6 +125,16 @@
     "Detail": "Detail",
     "Network": "Network"
   },
+  "cardPing": {
+    "title": "Network monitoring",
+    "window": "1h · Loss",
+    "loading": "Loading",
+    "noData": "No data",
+    "stale": "Stale",
+    "error": "Refresh failed",
+    "noSamples": "No samples",
+    "keyboard": "Use left and right arrow keys to inspect history"
+  },
   "monitor": {
     "noData": "No server monitor data, please add a service monitor first",
     "avgDelay": "Latency",

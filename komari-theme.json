@@ -2,7 +2,7 @@
     "name": "nezha-BITJEBE+Purcarte",
     "short": "nezha-BITJEBE-Purcarte",
     "description": "nezha-BITJEBE+Purcarte Theme for Komari Monitor",
-    "version": "1.4.8",
+    "version": "1.5.0",
     "author": "hxx927",
     "url": "https://github.com/hxx927/nezha-BITJEBE-Purcarte",
     "preview": "preview.png",
@@ -251,6 +251,31 @@
                 "type": "input",
                 "default": "",
                 "help": "JSON对象，按服务器UUID、卡片ID或名称指定货币，例如 {\"Tokyo\":\"JPY\",\"spartanhost\":\"USD\"}。【更推荐】直接在 Komari 后端服务器的 tags 字段里加 <JPY>/<USD>/<CNY> 等元标签，例如把 KDDI 的 tags 改成 \"Tokyonline; KDDI; <JPY>\"，主题会自动识别且不在前端显示该标签。优先级：本JSON > tags元标签 > 默认账单货币 > 后端currency字段。"
+            },
+            {
+                "name": "卡片网络监测",
+                "type": "title"
+            },
+            {
+                "key": "CardPingEnabled",
+                "name": "显示卡片延迟与丢包",
+                "type": "switch",
+                "default": true,
+                "help": "在普通服务器卡片中显示最多三条监测线路的当前延迟、最近一小时真实丢包率和历史色条。离线或数据过期时显示 --，不影响行内模式。"
+            },
+            {
+                "key": "CardPingTasks",
+                "name": "卡片监测任务",
+                "type": "input",
+                "default": "[\"联通\",\"移动+35\",\"电信\"]",
+                "help": "JSON数组，按显示顺序指定1至3个Komari监测任务，支持完整任务名称或数字ID，例如 [\"湖南联通\",\"移动+35\",\"湖南电信\"] 或 [1,2,3]。名称优先精确匹配，否则仅在包含该名称的任务唯一时匹配；有重名请使用任务ID。任务必须已在后台关联到对应服务器。"
+            },
+            {
+                "key": "CardPingTaskOverrides",
+                "name": "服务器监测任务覆盖",
+                "type": "input",
+                "default": "",
+                "help": "可选JSON对象，按UUID、卡片ID或服务器名称为特定节点指定任务。例如 {\"Ciallo-HK\":[\"湖南联通\",\"移动+35\",\"湖南电信\"],\"Tokyo\":[4,5,6]}。未单独配置的服务器继承上面的全局设置，最多显示三条；这只改变主题展示，不创建或修改后台监测任务。"
             },
             {
                 "name": "流量进度条设置",

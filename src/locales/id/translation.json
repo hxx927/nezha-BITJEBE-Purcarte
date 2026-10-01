@@ -23,5 +23,15 @@
   "theme": {
     "light": "Terang",
     "dark": "Gelap"
+  },
+  "cardPing": {
+    "title": "Pemantauan jaringan",
+    "window": "1j · Kehilangan",
+    "loading": "Memuat",
+    "noData": "Tanpa data",
+    "stale": "Kedaluwarsa",
+    "error": "Pembaruan gagal",
+    "noSamples": "Tidak ada sampel",
+    "keyboard": "Gunakan tombol panah kiri dan kanan untuk melihat riwayat"
   }
 }

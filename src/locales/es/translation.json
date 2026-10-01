@@ -99,6 +99,16 @@
     "Detail": "Detalle",
     "Network": "Red"
   },
+  "cardPing": {
+    "title": "Monitor de red",
+    "window": "1h · Pérdida",
+    "loading": "Cargando",
+    "noData": "Sin datos",
+    "stale": "Desactualizado",
+    "error": "Error al actualizar",
+    "noSamples": "Sin muestras",
+    "keyboard": "Usa las flechas izquierda y derecha para ver el historial"
+  },
   "monitor": {
     "avgDelay": "Latencia",
     "noData": "No hay datos de servidores, primero agregue un monitor de servicio",

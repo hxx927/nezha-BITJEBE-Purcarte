@@ -14,7 +14,8 @@ import { SORT_ORDERS, SORT_TYPES } from "@/context/sort-context"
 import { useSort } from "@/hooks/use-sort"
 import { useStatus } from "@/hooks/use-status"
 import { useWebSocketContext } from "@/hooks/use-websocket-context"
-import { fetchServerGroup } from "@/lib/nezha-api"
+import { fetchCardPing, fetchServerGroup } from "@/lib/nezha-api"
+import { cardPingEnabled } from "@/lib/card-ping"
 import { cn, formatNezhaInfo } from "@/lib/utils"
 import { NezhaWebsocketResponse } from "@/types/nezha-api"
 import { ServerGroup } from "@/types/nezha-api"
@@ -43,6 +44,14 @@ export default function Servers() {
   const themeSettings = window as unknown as Record<string, unknown>
   const showVisitorCapsule = themeSettings.ShowVisitorCapsule === true
   const showAssetCard = themeSettings.ShowAssetCard === true
+  const { data: pingData, isPending: pingLoading, isError: pingError } = useQuery({
+    queryKey: ["card-ping", 1],
+    queryFn: fetchCardPing,
+    enabled: cardPingEnabled(themeSettings.CardPingEnabled) && inline === "0" && connected,
+    staleTime: 60000,
+    refetchInterval: 60000,
+    retry: 1,
+  })
 
   const restoreScrollPosition = () => {
     const savedPosition = sessionStorage.getItem("scrollPosition")
@@ -390,7 +399,7 @@ export default function Servers() {
       {inline === "0" && (
         <section ref={containerRef} className="mt-6 grid grid-cols-[repeat(auto-fill,minmax(min(100%,15rem),1fr))] gap-2 server-card-list">
           {filteredServers.map((serverInfo) => (
-            <ServerCard now={nezhaWsData.now} key={serverInfo.id} serverInfo={serverInfo} />
+            <ServerCard now={nezhaWsData.now} key={serverInfo.id} serverInfo={serverInfo} pingData={pingData} pingLoading={pingLoading} pingError={pingError} />
           ))}
         </section>
       )}

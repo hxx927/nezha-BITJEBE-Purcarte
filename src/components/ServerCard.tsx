@@ -1,8 +1,10 @@
 import ServerCardDetailsDialog from "@/components/ServerCardDetailsDialog"
+import ServerCardPing from "@/components/ServerCardPing"
 import ServerFlag from "@/components/ServerFlag"
 import TrafficCircle from "@/components/TrafficCircle"
 import { Progress } from "@/components/ui/progress"
 import { formatBytes } from "@/lib/format"
+import { CardPingData, cardPingEnabled } from "@/lib/card-ping"
 import { GetFontLogoClass, GetPlatformLogoColor, MageMicrosoftWindows } from "@/lib/logo-class"
 import { calcTrafficUsed, cn, formatBillingAmount, formatNezhaInfo, getDaysBetweenDatesWithAutoRenewal, parsePublicNote } from "@/lib/utils"
 import { NezhaServer } from "@/types/nezha-api"
@@ -73,7 +75,9 @@ function formatTrafficLimitType(type: string) {
   }
 }
 
-export default function ServerCard({ now, serverInfo }: { now: number; serverInfo: NezhaServer }) {
+export default function ServerCard({ now, serverInfo, pingData, pingLoading = false, pingError = false }: {
+  now: number; serverInfo: NezhaServer; pingData?: CardPingData; pingLoading?: boolean; pingError?: boolean
+}) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [detailsOpen, setDetailsOpen] = useState(false)
@@ -276,6 +280,9 @@ export default function ServerCard({ now, serverInfo }: { now: number; serverInf
               {load_1} | {load_5} | {load_15}
             </span>
           </div>
+          {cardPingEnabled((window as unknown as Record<string, unknown>).CardPingEnabled) && (
+            <ServerCardPing server={serverInfo} online={online} now={now} data={pingData} loading={pingLoading} error={pingError} />
+          )}
           <div className="grid grid-cols-2 gap-1.5 border-t pt-1.5 text-[11px]">
             <div className="min-w-0 truncate">
               <span className="mr-1">{t("serverCard.expires")}:</span>

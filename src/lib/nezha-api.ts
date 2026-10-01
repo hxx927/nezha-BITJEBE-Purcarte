@@ -10,6 +10,7 @@ import {
 } from "@/types/nezha-api"
 import { DateTime } from "luxon"
 
+import { CardPingData, CardPingTask, normalizeCardPingSample } from "./card-ping"
 import { getKomariNodes, uuidToNumber } from "./utils"
 
 //let lastestRefreshTokenAt = 0
@@ -542,6 +543,44 @@ export const fetchMonitor = async (server_id: number, hours: number = 24): Promi
   }
 
   return { success: true, data }
+}
+
+/** A single homepage request shared by all cards. Keep raw losses, without chart EMA smoothing. */
+export async function fetchCardPing(): Promise<CardPingData> {
+  const data: CardPingData = { tasks: [], samples: {} }
+  const add = (uuid: string, taskId: number, point: ReturnType<typeof normalizeCardPingSample>) => {
+    if (!point || !uuid || !Number.isSafeInteger(taskId) || taskId <= 0) return
+    const tasks = data.samples[uuid] ??= {}
+    const samples = tasks[taskId] ??= []
+    samples.push(point)
+  }
+  try {
+    const metrics = await fetchPingMetricSeries({ hours: 1 }, 120)
+    data.tasks = metrics.tasks.map(task => ({ id: Number(task.id), name: task.name || `task_${task.id}`, clients: task.clients }))
+    const lossLookup = buildPingLossLookup(metrics.series)
+    for (const series of metrics.series) {
+      if (series.metric_key !== PING_LATENCY_METRIC || !series.entity_id) continue
+      const losses = lossLookup.get(metricSeriesKey(series))
+      for (const point of series.points || []) {
+        const time = metricPointTime(point)
+        if (time === null || point.value === null || point.value === undefined) continue
+        const count = metricPointCount(point)
+        const loss = losses?.get(time)
+        add(series.entity_id, Number(metricTaskId(series)), normalizeCardPingSample(time, latencyWithoutLoss(point.value, count, loss), loss ? loss.ratio * 100 : Number(point.value) < 0 ? 100 : 0, loss?.count ?? count))
+      }
+    }
+    return data
+  } catch (error) {
+    if (!isMetricApiUnavailable(error)) throw error
+  }
+  const result = await SharedClient().callViaHTTP<{ type: string; hours: number; maxCount: number }, {
+    tasks?: CardPingTask[]
+    records?: { client: string; task_id: number; time: string; value: number }[]
+  }>("common:getRecords", { type: "ping", hours: 1, maxCount: -1 }, { timeout: 30000 })
+  if (!result || !Array.isArray(result.records) || !Array.isArray(result.tasks)) throw new Error("Invalid ping history response")
+  data.tasks = result.tasks.map(task => ({ ...task, id: Number(task.id), name: task.name || `task_${task.id}` }))
+  for (const record of result.records) add(record.client, Number(record.task_id), normalizeCardPingSample(record.time, record.value))
+  return data
 }
 export const fetchServerUptime = async (): Promise<ServiceResponse> => {
   const kmNodes: Record<string, any> = await getKomariNodes()

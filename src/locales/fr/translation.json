@@ -1,1 +1,12 @@
-{}
+{
+  "cardPing": {
+    "title": "Surveillance réseau",
+    "window": "1h · Perte",
+    "loading": "Chargement",
+    "noData": "Aucune donnée",
+    "stale": "Obsolète",
+    "error": "Échec de mise à jour",
+    "noSamples": "Aucune mesure",
+    "keyboard": "Utilisez les flèches gauche et droite pour consulter l’historique"
+  }
+}

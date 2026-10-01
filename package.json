@@ -1,12 +1,13 @@
 {
   "name": "nezha-BITJEBE-Purcarte",
   "private": true,
-  "version": "1.4.8",
+  "version": "1.5.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "test": "node --test tests/card-ping.test.mjs",
     "lint:fix": "eslint --fix .",
     "format": "prettier --write .",
     "preview": "vite preview"

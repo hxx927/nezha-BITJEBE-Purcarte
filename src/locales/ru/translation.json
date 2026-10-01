@@ -147,5 +147,15 @@
     "themeBy": "Тема от "
   },
   "NoResults": "Ничего не найдено.",
-  "nezha": "Nezha Monitoring"
+  "nezha": "Nezha Monitoring",
+  "cardPing": {
+    "title": "Мониторинг сети",
+    "window": "1ч · Потери",
+    "loading": "Загрузка",
+    "noData": "Нет данных",
+    "stale": "Устарело",
+    "error": "Ошибка обновления",
+    "noSamples": "Нет измерений",
+    "keyboard": "Используйте стрелки влево и вправо для просмотра истории"
+  }
 }
