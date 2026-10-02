@@ -97,7 +97,7 @@ function PingLine({
                   {valueLabel(unavailable ? null : summary.latency, "ms")}
                 </span>
               </span>
-              <span className="w-full break-words text-[9px] text-[#94a3b8]" aria-label={t("monitor.packetLoss")}>
+              <span className="w-full break-words text-[9px] text-muted-foreground" aria-label={t("monitor.packetLoss")}>
                 {status && status !== "--" ? (
                   status
                 ) : (
@@ -210,7 +210,7 @@ export default function ServerCardPing({
       {(!capsules || !online) && (
         <div className="flex items-center justify-between gap-1 text-[10px] leading-[13px]">
           <span className="font-medium">{t("cardPing.title")}</span>
-          <span className={cn("truncate", online ? "text-muted-foreground" : "text-red-600 dark:text-red-300")}>
+          <span className={cn("truncate", !online && "text-red-600 dark:text-red-300")}>
             {online ? t("cardPing.window") : t("monitor.monitoringInterrupted")}
           </span>
         </div>
