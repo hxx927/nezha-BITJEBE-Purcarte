@@ -84,9 +84,6 @@ const TIME_OPTIONS = [
   { value: "6", label: "6h" },
   { value: "12", label: "12h" },
   { value: "24", label: "24h" },
-  { value: "72", label: "3d" },
-  { value: "168", label: "7d" },
-  { value: "720", label: "30d" },
 ]
 
 export function NetworkChart({ server_id, show }: { server_id: number; show: boolean }) {
@@ -121,7 +118,7 @@ export function NetworkChart({ server_id, show }: { server_id: number; show: boo
     enabled: show,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
-    refetchInterval: liveServerState?.online === false ? false : hours <= 24 ? 10000 : hours <= 168 ? 60000 : 300000,
+    refetchInterval: liveServerState?.online === false ? false : 10000,
   })
 
   React.useEffect(() => {
@@ -538,7 +535,6 @@ export const NetworkChartClient = React.memo(function NetworkChart({
                 ticks={xAxisTicks}
                 tickFormatter={(value) => {
                   const date = new Date(value)
-                  if (hours > 24) return `${date.getMonth() + 1}/${date.getDate()}`
                   return `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`
                 }}
               />
